@@ -82,14 +82,14 @@ class TestGenerator:
             "android_api": android_api,
             "adapter_class": f"{android_api.class_name}Adapter",
             "test_class": f"{android_api.class_name}AdapterTest",
-            "package": f"noah.adapters.{android_api.package}",
+            "package": f"craft.adapters.{android_api.package}",
         }
 
     def _generate_junit_tests(self, context: Dict[str, Any]) -> str:
         """Generate JUnit test class."""
         lines = [
             f"/**",
-            f" * Auto-generated tests by NOAH v{context['generator_version']}",
+            f" * Auto-generated tests by CRAFT v{context['generator_version']}",
             f" * Testing: {context['adapter_class']}",
             f" * Generated: {context['generated_at']}",
             f" */",

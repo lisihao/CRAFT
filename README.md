@@ -1,10 +1,10 @@
-# NOAH - NOAH Opens Android on Harmony
+# CRAFT - CRAFT Runs Any Framework Technology
 
-> AI-Driven Android-to-HarmonyOS API Adaptation Layer Generator
+> AI-Driven Cross-Platform API Adaptation Layer Generator
 
 ## Overview
 
-NOAH is an automated system that generates compatibility layers enabling Android applications to run on HarmonyOS. Using AI-powered code generation and semantic API mapping, NOAH achieves massive-scale API adaptation with minimal human intervention.
+CRAFT is an automated system that generates compatibility layers enabling applications to run across different platforms (e.g., Android to HarmonyOS). Using AI-powered code generation and semantic API mapping, CRAFT achieves massive-scale API adaptation with minimal human intervention.
 
 ## Key Features
 
@@ -12,21 +12,21 @@ NOAH is an automated system that generates compatibility layers enabling Android
 - **Semantic Mapping**: Understands API semantics beyond simple signature matching
 - **Automated Testing**: Auto-generates comprehensive test suites for all adapters
 - **Incremental Updates**: Efficiently handles SDK version updates
-- **High Coverage**: Targets 90%+ API coverage across Android Framework
+- **High Coverage**: Targets 90%+ API coverage across frameworks
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    NOAH Pipeline                             │
+│                    CRAFT Pipeline                            │
 │                                                              │
-│  Android SDK  ──→  API Analyzer  ──→  Semantic Mapper       │
+│  Source SDK  ──→  API Analyzer  ──→  Semantic Mapper        │
 │       │                                      │               │
 │       ▼                                      ▼               │
 │  API Specs DB ──→  Claude Code Agent ──→  Adapter Code      │
 │       │                                      │               │
 │       ▼                                      ▼               │
-│  HarmonyOS SDK ──→  Test Generator  ──→  Quality Gate       │
+│  Target SDK ──→  Test Generator  ──→  Quality Gate          │
 │                                              │               │
 │                                              ▼               │
 │                                       Shim Library          │
@@ -36,7 +36,7 @@ NOAH is an automated system that generates compatibility layers enabling Android
 ## Project Structure
 
 ```
-NOAH/
+CRAFT/
 ├── docs/                    # Design documents
 ├── src/
 │   ├── core/               # Core data structures
@@ -56,15 +56,15 @@ NOAH/
 
 - Python 3.11+
 - Claude API access (Opus 4.5 recommended)
-- Android SDK source
-- HarmonyOS SDK source
+- Source platform SDK (e.g., Android SDK)
+- Target platform SDK (e.g., HarmonyOS SDK)
 
 ### Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/NOAH.git
-cd NOAH
+git clone https://github.com/lisihao/CRAFT.git
+cd CRAFT
 
 # Create virtual environment
 python -m venv venv
@@ -82,10 +82,10 @@ cp configs/ai_config.yaml.example configs/ai_config.yaml
 
 ```bash
 # Parse Android SDK
-python -m noah.tools.sdk_parser --sdk android --path /path/to/android-sdk
+python -m craft.tools.sdk_parser --sdk android --path /path/to/android-sdk
 
 # Generate adapters for specific package
-python -m noah.pipeline.generate --package android.app
+python -m craft.pipeline.generate --package android.app
 
 # Run tests
 python -m pytest src/testing/
@@ -94,9 +94,8 @@ python -m pytest src/testing/
 ## Documentation
 
 - [Architecture Design](docs/ARCHITECTURE_DESIGN.md) - System architecture and design decisions
-- [API Mapping Spec](docs/API_MAPPING_SPEC.md) - API mapping rules and strategies
-- [Pipeline Design](docs/PIPELINE_DESIGN.md) - Automation pipeline details
-- [Testing Strategy](docs/TESTING_STRATEGY.md) - Test generation and validation
+- [Feasibility Analysis](docs/FEASIBILITY_ANALYSIS.md) - Technical feasibility study
+- [API Bridge List](docs/TIEBA_API_BRIDGE_LIST.md) - Example API bridge analysis
 
 ## Development Status
 

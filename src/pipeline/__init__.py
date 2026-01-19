@@ -1,5 +1,5 @@
 """
-NOAH Pipeline Module
+CRAFT Pipeline Module
 
 Automation pipeline for large-scale API adaptation.
 """

@@ -177,7 +177,7 @@ SharedPreferences prefs = context.getSharedPreferences("config", MODE_PRIVATE);
 prefs.edit().putString("token", "xxx").apply();
 String token = prefs.getString("token", "");
 
-// NOAH 生成的桥接代码
+// CRAFT 生成的桥接代码
 public class SharedPreferencesAdapter implements SharedPreferences {
     private Preferences ohosPrefs;
 
@@ -370,7 +370,7 @@ Notification notification = new Notification.Builder(this, "channel_id")
     .build();
 manager.notify(1, notification);
 
-// NOAH 生成的桥接代码
+// CRAFT 生成的桥接代码
 public class NotificationManagerAdapter {
     private notificationManager ohosManager;
 
@@ -572,7 +572,7 @@ struct WebContainer {
 
 ## 八、工作量估算
 
-| 模块 | API 数量 | NOAH 自动化 | 人工审核 | 预计人天 |
+| 模块 | API 数量 | CRAFT 自动化 | 人工审核 | 预计人天 |
 |-----|---------|------------|---------|---------|
 | 生命周期 | 20 | 60% | 8 | 2 |
 | 基础 UI | 100 | 75% | 25 | 5 |
@@ -585,7 +585,7 @@ struct WebContainer {
 | WebView | 30 | 40% | 18 | 5 |
 | **合计** | **410** | **~62%** | **~158** | **~36** |
 
-**结论**: 使用 NOAH 自动化后，百度贴吧适配预计需要 **36 人天** 的人工审核和深度桥接工作，相比纯人工的 70+ 人天节省约 50%。
+**结论**: 使用 CRAFT 自动化后，百度贴吧适配预计需要 **36 人天** 的人工审核和深度桥接工作，相比纯人工的 70+ 人天节省约 50%。
 
 ---
 

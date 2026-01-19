@@ -1,7 +1,7 @@
 """
 Configuration Management
 
-Centralized configuration for the NOAH system.
+Centralized configuration for the CRAFT system.
 """
 
 from dataclasses import dataclass, field
@@ -72,7 +72,7 @@ class PathConfig:
 @dataclass
 class Config:
     """
-    Main configuration class for NOAH.
+    Main configuration class for CRAFT.
 
     Aggregates all sub-configurations and provides loading/saving functionality.
     """
@@ -89,7 +89,7 @@ class Config:
     def load(cls, config_path: Optional[Path] = None) -> "Config":
         """Load configuration from YAML file."""
         if config_path is None:
-            config_path = Path(__file__).parent.parent.parent / "configs" / "noah_config.yaml"
+            config_path = Path(__file__).parent.parent.parent / "configs" / "craft_config.yaml"
 
         config = cls()
 
@@ -114,7 +114,7 @@ class Config:
     def save(self, config_path: Optional[Path] = None):
         """Save configuration to YAML file."""
         if config_path is None:
-            config_path = self.paths.configs_dir / "noah_config.yaml"
+            config_path = self.paths.configs_dir / "craft_config.yaml"
 
         config_path.parent.mkdir(parents=True, exist_ok=True)
 

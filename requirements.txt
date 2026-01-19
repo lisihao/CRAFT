@@ -1,4 +1,4 @@
-# NOAH - Python Dependencies
+# CRAFT - Python Dependencies
 # AI-Driven Android-to-HarmonyOS API Adaptation System
 
 # Core dependencies

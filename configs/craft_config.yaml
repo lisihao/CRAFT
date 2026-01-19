@@ -1,4 +1,4 @@
-# NOAH Configuration
+# CRAFT Configuration
 # AI-Driven Android-to-HarmonyOS API Adaptation System
 
 version: "1.0.0"
@@ -50,4 +50,4 @@ output:
 logging:
   level: INFO
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-  file: logs/noah.log
+  file: logs/craft.log

@@ -1,5 +1,5 @@
 """
-NOAH Analyzers Module
+CRAFT Analyzers Module
 
 Parsers and analyzers for Android and HarmonyOS SDKs.
 """

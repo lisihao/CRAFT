@@ -1,5 +1,5 @@
 """
-NOAH Core Module
+CRAFT Core Module
 Core data structures and utilities for API adaptation layer generation.
 """
 

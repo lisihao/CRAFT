@@ -1,5 +1,5 @@
 """
-NOAH Generators Module
+CRAFT Generators Module
 
 Code generators for adapters, tests, and documentation.
 """
