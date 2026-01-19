@@ -1,0 +1,43 @@
+# NOAH - Python Dependencies
+# AI-Driven Android-to-HarmonyOS API Adaptation System
+
+# Core dependencies
+pyyaml>=6.0.1
+jinja2>=3.1.2
+pydantic>=2.5.0
+
+# AI/ML dependencies
+anthropic>=0.45.0
+
+# Code parsing
+tree-sitter>=0.20.0
+tree-sitter-java>=0.20.0
+
+# Async processing
+aiohttp>=3.9.0
+asyncio>=3.4.3
+
+# Task queue (optional, for distributed processing)
+celery>=5.3.0
+redis>=5.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Code quality
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.5.0
+ruff>=0.1.0
+
+# Documentation
+mkdocs>=1.5.0
+mkdocs-material>=9.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+rich>=13.0.0
+click>=8.1.0
+tqdm>=4.66.0

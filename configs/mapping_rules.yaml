@@ -1,0 +1,148 @@
+# NOAH API Mapping Rules
+# Defines known mappings between Android and HarmonyOS APIs
+
+version: "1.0.0"
+
+# Direct Mappings (1:1 correspondence)
+direct_mappings:
+
+  # Activity/UIAbility
+  - android: android.app.Activity
+    harmony: ohos.app.UIAbility
+    confidence: 0.95
+    notes: Core application lifecycle mapping
+
+  - android: android.content.Intent
+    harmony: ohos.app.Want
+    confidence: 0.90
+    notes: Intent to Want with parameter translation
+
+  - android: android.content.Context
+    harmony: ohos.app.Context
+    confidence: 0.95
+    notes: Application context mapping
+
+  - android: android.os.Bundle
+    harmony: ohos.app.AbilityConstant.LaunchParam
+    confidence: 0.85
+    notes: Bundle data mapping
+
+  # Views/Components
+  - android: android.view.View
+    harmony: ohos.arkui.Component
+    confidence: 0.80
+    notes: Base view component
+
+  - android: android.widget.TextView
+    harmony: ohos.arkui.Text
+    confidence: 0.90
+    notes: Text display component
+
+  - android: android.widget.Button
+    harmony: ohos.arkui.Button
+    confidence: 0.95
+    notes: Button component
+
+  - android: android.widget.ImageView
+    harmony: ohos.arkui.Image
+    confidence: 0.90
+    notes: Image display component
+
+  - android: android.widget.EditText
+    harmony: ohos.arkui.TextInput
+    confidence: 0.90
+    notes: Text input component
+
+  # Layouts
+  - android: android.widget.LinearLayout
+    harmony: ohos.arkui.Column/Row
+    confidence: 0.85
+    notes: Linear layout (orientation-dependent)
+
+  - android: android.widget.FrameLayout
+    harmony: ohos.arkui.Stack
+    confidence: 0.85
+    notes: Frame/Stack layout
+
+  - android: android.widget.RelativeLayout
+    harmony: ohos.arkui.RelativeContainer
+    confidence: 0.80
+    notes: Relative positioning
+
+# Semantic Mappings (similar functionality, different API)
+semantic_mappings:
+
+  - android: android.widget.Toast
+    harmony: ohos.promptAction.showToast
+    confidence: 0.85
+    transform: API_STYLE_CHANGE
+    notes: Builder pattern to function call
+
+  - android: android.app.AlertDialog
+    harmony: ohos.promptAction.showDialog
+    confidence: 0.80
+    transform: API_STYLE_CHANGE
+    notes: Dialog API transformation
+
+  - android: android.content.SharedPreferences
+    harmony: ohos.data.preferences.Preferences
+    confidence: 0.85
+    notes: Key-value storage
+
+# Bridge Mappings (require custom bridge code)
+bridge_mappings:
+
+  - android: android.database.sqlite.SQLiteDatabase
+    harmony: ohos.data.relationalStore.RdbStore
+    confidence: 0.70
+    complexity: HIGH
+    notes: Database API bridge
+
+  - android: android.webkit.WebView
+    harmony: ohos.web.webview.WebviewController
+    confidence: 0.65
+    complexity: HIGH
+    notes: WebView bridge with API differences
+
+# Unsupported APIs (no equivalent)
+unsupported:
+  - android.app.AppWidgetProvider
+  - android.app.WallpaperService
+  - android.service.dreams.DreamService
+
+# Method-level mappings
+method_mappings:
+
+  # Activity lifecycle
+  android.app.Activity:
+    onCreate:
+      harmony_method: onWindowStageCreate
+      notes: Different lifecycle model
+    onStart:
+      harmony_method: onForeground
+    onResume:
+      harmony_method: onForeground
+    onPause:
+      harmony_method: onBackground
+    onStop:
+      harmony_method: onBackground
+    onDestroy:
+      harmony_method: onWindowStageDestroy
+
+  # Intent actions
+  android.content.Intent:
+    setAction:
+      harmony_method: Want.setAction
+    putExtra:
+      harmony_method: Want.setParam
+    getStringExtra:
+      harmony_method: Want.getParam
+
+# Type mappings
+type_mappings:
+  android.graphics.Bitmap: ohos.image.PixelMap
+  android.graphics.drawable.Drawable: ohos.arkui.Image
+  android.net.Uri: ohos.uri.URI
+  android.os.Parcelable: ohos.ability.Sequenceable
+  java.util.ArrayList: Array
+  java.util.HashMap: Map

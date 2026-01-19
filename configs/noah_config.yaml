@@ -1,0 +1,53 @@
+# NOAH Configuration
+# AI-Driven Android-to-HarmonyOS API Adaptation System
+
+version: "1.0.0"
+environment: development
+
+# AI Service Configuration
+ai:
+  provider: anthropic
+  model_light: claude-3-haiku-20240307
+  model_standard: claude-sonnet-4-20250514
+  model_advanced: claude-opus-4-5-20251101
+  max_tokens: 4096
+  temperature: 0.2
+  rate_limit_rpm: 50
+  retry_attempts: 3
+
+# Pipeline Configuration
+pipeline:
+  batch_size: 100
+  parallel_workers: 10
+  enable_incremental: true
+  auto_test: true
+  require_review_threshold: 0.8
+  max_retries: 3
+  timeout_seconds: 300
+
+# Quality Gates Configuration
+quality:
+  min_confidence: 0.7
+  min_test_coverage: 0.8
+  max_complexity: very_high
+  require_human_review:
+    - bridge
+    - shim
+  auto_approve_confidence: 0.95
+
+# SDK Paths (configure for your environment)
+sdk_paths:
+  android: /path/to/android-sdk
+  harmony: /path/to/harmony-sdk
+
+# Output Configuration
+output:
+  adapters_format: java  # java, kotlin
+  generate_tests: true
+  generate_docs: true
+
+# Logging Configuration
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: logs/noah.log

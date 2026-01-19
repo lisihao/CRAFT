@@ -1,0 +1,81 @@
+# NOAH Project .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Type checking
+.mypy_cache/
+
+# Logs
+logs/
+*.log
+
+# Generated output
+output/
+!output/.gitkeep
+
+# SDK files (large, download separately)
+specs/android/sdk/
+specs/harmony/sdk/
+
+# Environment and secrets
+.env
+.env.local
+*.pem
+*.key
+api_keys.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Documentation build
+site/
+docs/_build/
