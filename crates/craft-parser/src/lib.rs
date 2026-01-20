@@ -6,10 +6,9 @@
 //! - Incremental parsing support
 //! - Parallel processing of large codebases
 
-use craft_core::{ApiSpec, CraftError, MethodSpec, ParameterSpec, Platform};
-use rayon::prelude::*;
+use craft_core::{ApiSpec, CraftError, Platform};
 use std::path::Path;
-use tracing::{debug, info, warn};
+use tracing::info;
 
 pub mod java_parser;
 
