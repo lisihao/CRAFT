@@ -1,32 +1,9 @@
 # CRAFT Project .gitignore
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
-venv/
-ENV/
-env/
-.venv/
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
 
 # IDE
 .idea/
@@ -36,14 +13,8 @@ env/
 *~
 
 # Testing
-.pytest_cache/
 .coverage
 htmlcov/
-.tox/
-.nox/
-
-# Type checking
-.mypy_cache/
 
 # Logs
 logs/
@@ -72,9 +43,6 @@ Thumbs.db
 *.tmp
 *.temp
 .cache/
-
-# Jupyter notebooks checkpoints
-.ipynb_checkpoints/
 
 # Documentation build
 site/

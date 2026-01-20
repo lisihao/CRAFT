@@ -4,20 +4,69 @@
 
 ## 项目概述
 
-CRAFT 使用 AI 自动化生成跨平台 API 转接层（如 Android API 到 HarmonyOS API）。Claude Code 在本项目中承担核心代码生成职责。
+CRAFT 使用 AI 自动化生成跨平台 API 转接层（如 Android API 到 HarmonyOS API）。项目使用 Rust 语言构建，以确保内存安全、高性能和可验证性。
 
 ## 技术栈
 
-- **语言**: Python 3.11+
+- **语言**: Rust 1.75+
 - **AI 引擎**: Claude API (Opus 4.5)
-- **解析器**: Tree-sitter / JavaParser
-- **模板**: Jinja2
-- **存储**: SQLite + YAML
-- **任务调度**: Celery + Redis
+- **解析器**: tree-sitter (Java/ArkTS 语法解析)
+- **异步运行时**: Tokio
+- **并行计算**: Rayon
+- **模板引擎**: Tera (Jinja2 兼容)
+- **序列化**: serde + serde_yaml + serde_json
+- **HTTP 客户端**: reqwest
+- **CLI**: clap
+- **日志**: tracing
+
+## Cargo Workspace 结构
+
+```
+CRAFT/
+├── Cargo.toml              # Workspace 根配置
+├── crates/
+│   ├── craft-core/         # 核心数据结构
+│   ├── craft-parser/       # SDK 解析器
+│   ├── craft-analyzer/     # 语义分析引擎
+│   ├── craft-generator/    # 代码生成器
+│   ├── craft-ai/           # Claude API 集成
+│   ├── craft-pipeline/     # 批处理流水线
+│   └── craft-cli/          # 命令行工具
+├── specs/                  # API 规格文件
+├── templates/              # 代码模板
+├── configs/                # 配置文件
+└── output/                 # 生成产物
+```
 
 ## 开发规范
 
-### 1. API 规格文件规范
+### 1. Rust 代码风格
+
+遵循 Rust 官方风格指南：
+
+```rust
+// 使用 Result 进行错误处理
+pub fn parse_api(source: &str) -> Result<ApiSpec, ParseError> {
+    // ...
+}
+
+// 使用 derive 宏简化代码
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiSpec {
+    pub platform: Platform,
+    pub package: String,
+    pub class_name: String,
+}
+
+// 使用 impl 块组织方法
+impl ApiSpec {
+    pub fn new(platform: Platform, package: &str) -> Self {
+        // ...
+    }
+}
+```
+
+### 2. API 规格文件规范
 
 API 规格使用 YAML 格式，存放在 `specs/` 目录：
 
@@ -33,21 +82,25 @@ api_spec:
       semantic_tags: [tag1, tag2]
 ```
 
-### 2. 映射规则规范
+### 3. 映射规则规范
 
 映射规则存放在 `configs/mapping_rules.yaml`：
 
 ```yaml
 mappings:
-  - android: android.app.Activity
-    harmony: ohos.app.UIAbility
-    type: direct  # direct | semantic | bridge
+  - source:
+      platform: android
+      class: android.app.Activity
+    target:
+      platform: harmony
+      class: ohos.app.UIAbility
+    mapping_type: direct  # direct | semantic | bridge
     confidence: 0.95
 ```
 
-### 3. 代码生成规范
+### 4. 代码生成规范
 
-生成的适配器代码必须包含：
+生成的适配器代码必须包含元数据注释：
 
 ```java
 /**
@@ -61,43 +114,62 @@ mappings:
  */
 ```
 
-### 4. 测试规范
+### 5. 错误处理规范
 
-每个生成的适配器必须有对应测试：
+使用 thiserror 定义错误类型：
 
-- 单元测试: `tests/unit/test_{adapter_name}.py`
-- 集成测试: `tests/integration/test_{adapter_name}_integration.py`
+```rust
+use thiserror::Error;
 
-### 5. 提交规范
+#[derive(Error, Debug)]
+pub enum CraftError {
+    #[error("Parse error: {0}")]
+    Parse(#[from] ParseError),
+
+    #[error("API error: {0}")]
+    Api(#[from] ApiError),
+
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+}
+```
+
+### 6. 测试规范
+
+每个 crate 必须有完整的测试覆盖：
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_api_parsing() {
+        let spec = ApiSpec::parse("...").unwrap();
+        assert_eq!(spec.class_name, "Activity");
+    }
+
+    #[tokio::test]
+    async fn test_async_generation() {
+        // 异步测试
+    }
+}
+```
+
+### 7. 提交规范
 
 ```bash
 # 适配器生成
-feat(adapter): add Activity adapter for ohos.app.UIAbility
+feat(generator): add Activity adapter generation
 
 # 映射规则更新
-feat(mapping): add semantic mapping for Toast API
+feat(analyzer): add semantic mapping for Toast API
 
 # 流水线改进
 fix(pipeline): improve batch processing stability
 
 # 文档更新
 docs: update API mapping specification
-```
-
-## 目录结构
-
-```
-CRAFT/
-├── src/
-│   ├── core/           # 核心数据结构
-│   ├── analyzers/      # SDK 解析器
-│   ├── generators/     # 代码生成器
-│   ├── testing/        # 测试框架
-│   └── pipeline/       # 自动化流水线
-├── specs/              # API 规格
-├── templates/          # 代码模板
-├── configs/            # 配置文件
-└── output/             # 生成产物
 ```
 
 ## AI 使用策略
@@ -115,26 +187,68 @@ CRAFT/
 
 代码合并前必须通过：
 
-- [ ] 单元测试通过率 > 95%
+- [ ] `cargo fmt --check` 格式检查
+- [ ] `cargo clippy -- -D warnings` 静态分析
+- [ ] `cargo test --all` 单元测试
 - [ ] 代码覆盖率 > 80%
-- [ ] 无 Critical/High 级别问题
+- [ ] 无 unsafe 代码（除非必要且有注释说明）
 - [ ] 文档同步更新
 
 ## 常用命令
 
 ```bash
-# 解析 SDK
-python -m craft.analyzers.android_parser --sdk-path /path/to/sdk
-
-# 生成适配器
-python -m craft.generators.adapter_generator --package android.app
+# 构建项目
+cargo build --release
 
 # 运行测试
-pytest src/testing/ -v
+cargo test --all
+
+# 格式化代码
+cargo fmt
+
+# 静态分析
+cargo clippy
+
+# 生成文档
+cargo doc --open
+
+# 运行 CLI
+cargo run --bin craft-cli -- --help
+
+# 解析 SDK
+cargo run --bin craft-cli -- parse --platform android --sdk-path /path/to/sdk
+
+# 生成适配器
+cargo run --bin craft-cli -- generate --package android.app
 
 # 运行流水线
-python -m craft.pipeline.orchestrator --mode incremental
+cargo run --bin craft-cli -- pipeline --mode incremental
 ```
+
+## 性能优化
+
+1. **使用 Rayon 进行并行处理**：
+   ```rust
+   use rayon::prelude::*;
+
+   apis.par_iter()
+       .map(|api| process_api(api))
+       .collect()
+   ```
+
+2. **使用 Tokio 进行异步 I/O**：
+   ```rust
+   let results = futures::future::join_all(
+       apis.iter().map(|api| async move {
+           fetch_api_info(api).await
+       })
+   ).await;
+   ```
+
+3. **使用 tree-sitter 进行高性能解析**：
+   - 增量解析支持
+   - 内存高效
+   - 多语言支持
 
 ## 注意事项
 
@@ -142,3 +256,5 @@ python -m craft.pipeline.orchestrator --mode incremental
 2. **优先更新映射规则**，而不是直接修改生成逻辑
 3. **保持 API 规格的准确性**，这是所有生成的基础
 4. **测试先行**：新增映射规则前先编写测试用例
+5. **避免 unsafe**：除非绝对必要，否则不使用 unsafe 代码
+6. **文档注释**：公开 API 必须有 `///` 文档注释

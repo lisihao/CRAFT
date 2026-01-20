@@ -1,0 +1,16 @@
+[package]
+name = "craft-analyzer"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Semantic analysis engine for API mapping"
+
+[dependencies]
+craft-core = { workspace = true }
+craft-parser = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+rayon = { workspace = true }

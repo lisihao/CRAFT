@@ -8,8 +8,9 @@ CRAFT is an automated system that generates compatibility layers enabling applic
 
 ## Key Features
 
-- **AI-Driven Generation**: Leverages Claude Code for intelligent code generation
+- **AI-Driven Generation**: Leverages Claude API for intelligent code generation
 - **Semantic Mapping**: Understands API semantics beyond simple signature matching
+- **High Performance**: Built with Rust for memory safety and excellent performance
 - **Automated Testing**: Auto-generates comprehensive test suites for all adapters
 - **Incremental Updates**: Efficiently handles SDK version updates
 - **High Coverage**: Targets 90%+ API coverage across frameworks
@@ -23,7 +24,7 @@ CRAFT is an automated system that generates compatibility layers enabling applic
 │  Source SDK  ──→  API Analyzer  ──→  Semantic Mapper        │
 │       │                                      │               │
 │       ▼                                      ▼               │
-│  API Specs DB ──→  Claude Code Agent ──→  Adapter Code      │
+│  API Specs DB ──→  Claude AI Agent ──→  Adapter Code        │
 │       │                                      │               │
 │       ▼                                      ▼               │
 │  Target SDK ──→  Test Generator  ──→  Quality Gate          │
@@ -37,15 +38,18 @@ CRAFT is an automated system that generates compatibility layers enabling applic
 
 ```
 CRAFT/
-├── docs/                    # Design documents
-├── src/
-│   ├── core/               # Core data structures
-│   ├── analyzers/          # SDK parsers & analyzers
-│   ├── generators/         # Code generators
-│   ├── testing/            # Test framework
-│   └── pipeline/           # Automation pipeline
-├── specs/                  # API specifications
-├── templates/              # Code templates
+├── Cargo.toml              # Workspace configuration
+├── crates/
+│   ├── craft-core/         # Core data structures and types
+│   ├── craft-parser/       # SDK parsers (tree-sitter based)
+│   ├── craft-analyzer/     # Semantic analysis engine
+│   ├── craft-generator/    # Code generation (Tera templates)
+│   ├── craft-ai/           # Claude API integration
+│   ├── craft-pipeline/     # Batch processing pipeline
+│   └── craft-cli/          # Command line interface
+├── docs/                   # Design documents
+├── specs/                  # API specifications (YAML)
+├── templates/              # Code generation templates
 ├── configs/                # Configuration files
 └── tools/                  # Development utilities
 ```
@@ -54,7 +58,7 @@ CRAFT/
 
 ### Prerequisites
 
-- Python 3.11+
+- Rust 1.75+ (with cargo)
 - Claude API access (Opus 4.5 recommended)
 - Source platform SDK (e.g., Android SDK)
 - Target platform SDK (e.g., HarmonyOS SDK)
@@ -66,12 +70,8 @@ CRAFT/
 git clone https://github.com/lisihao/CRAFT.git
 cd CRAFT
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-
-# Install dependencies
-pip install -r requirements.txt
+# Build the project
+cargo build --release
 
 # Configure API keys
 cp configs/ai_config.yaml.example configs/ai_config.yaml
@@ -82,14 +82,30 @@ cp configs/ai_config.yaml.example configs/ai_config.yaml
 
 ```bash
 # Parse Android SDK
-python -m craft.tools.sdk_parser --sdk android --path /path/to/android-sdk
+craft-cli parse --platform android --sdk-path /path/to/android-sdk
+
+# Analyze and generate mappings
+craft-cli analyze --source android --target harmony
 
 # Generate adapters for specific package
-python -m craft.pipeline.generate --package android.app
+craft-cli generate --package android.app --output ./output
 
 # Run tests
-python -m pytest src/testing/
+cargo test --all
 ```
+
+## Technology Stack
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Language | Rust | Memory safety, high performance |
+| Parser | tree-sitter | High-performance code parsing |
+| Async Runtime | Tokio | Asynchronous I/O operations |
+| Parallelism | Rayon | CPU-bound parallel processing |
+| Templates | Tera | Jinja2-compatible code generation |
+| Serialization | serde | YAML/JSON configuration |
+| HTTP Client | reqwest | Claude API communication |
+| CLI | clap | Command line interface |
 
 ## Documentation
 
@@ -101,11 +117,30 @@ python -m pytest src/testing/
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| Foundation | In Progress | Basic infrastructure setup |
+| Foundation | In Progress | Rust infrastructure setup |
 | Core Engine | Planned | Semantic mapping & generation |
 | Pipeline | Planned | Automation & batch processing |
 | Scale | Planned | Full API coverage |
 | Production | Planned | Release-ready quality |
+
+## Building from Source
+
+```bash
+# Debug build
+cargo build
+
+# Release build (optimized)
+cargo build --release
+
+# Run tests
+cargo test --all
+
+# Run with logging
+RUST_LOG=info cargo run --bin craft-cli -- --help
+
+# Generate documentation
+cargo doc --open
+```
 
 ## Contributing
 
@@ -120,6 +155,7 @@ This project is licensed under the Apache License 2.0 - see the LICENSE file for
 - Android Open Source Project (AOSP)
 - OpenHarmony Project
 - Anthropic Claude for AI capabilities
+- Rust community for excellent tooling
 
 ---
 

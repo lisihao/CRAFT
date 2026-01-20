@@ -1,0 +1,16 @@
+[package]
+name = "craft-generator"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Code generation engine using Tera templates"
+
+[dependencies]
+craft-core = { workspace = true }
+tera = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }

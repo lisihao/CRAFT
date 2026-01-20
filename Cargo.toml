@@ -1,0 +1,69 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/craft-core",
+    "crates/craft-parser",
+    "crates/craft-analyzer",
+    "crates/craft-generator",
+    "crates/craft-ai",
+    "crates/craft-pipeline",
+    "crates/craft-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["CRAFT Team"]
+license = "Apache-2.0"
+repository = "https://github.com/lisihao/CRAFT"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+futures = "0.3"
+
+# Parallel processing
+rayon = "1.8"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Template engine
+tera = "1.19"
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json"] }
+
+# Parsing
+tree-sitter = "0.20"
+tree-sitter-java = "0.20"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# CLI
+clap = { version = "4.4", features = ["derive"] }
+
+# UUID
+uuid = { version = "1.6", features = ["v4", "serde"] }
+
+# File system
+walkdir = "2.4"
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Internal crates
+craft-core = { path = "crates/craft-core" }
+craft-parser = { path = "crates/craft-parser" }
+craft-analyzer = { path = "crates/craft-analyzer" }
+craft-generator = { path = "crates/craft-generator" }
+craft-ai = { path = "crates/craft-ai" }
+craft-pipeline = { path = "crates/craft-pipeline" }

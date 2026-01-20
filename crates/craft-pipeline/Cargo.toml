@@ -1,0 +1,21 @@
+[package]
+name = "craft-pipeline"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Batch processing pipeline for large-scale API adaptation"
+
+[dependencies]
+craft-core = { workspace = true }
+craft-parser = { workspace = true }
+craft-analyzer = { workspace = true }
+craft-generator = { workspace = true }
+craft-ai = { workspace = true }
+tokio = { workspace = true }
+futures = { workspace = true }
+rayon = { workspace = true }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
