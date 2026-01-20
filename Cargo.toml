@@ -8,6 +8,7 @@ members = [
     "crates/craft-ai",
     "crates/craft-pipeline",
     "crates/craft-cli",
+    "tests",
 ]
 
 [workspace.package]

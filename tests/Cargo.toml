@@ -1,0 +1,15 @@
+[package]
+name = "craft-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+craft-core = { path = "../crates/craft-core" }
+craft-parser = { path = "../crates/craft-parser" }
+craft-analyzer = { path = "../crates/craft-analyzer" }
+craft-generator = { path = "../crates/craft-generator" }
+
+[[test]]
+name = "e2e_test"
+path = "e2e_test.rs"
