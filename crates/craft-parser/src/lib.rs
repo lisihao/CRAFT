@@ -10,8 +10,10 @@ use craft_core::{ApiSpec, CraftError, Platform};
 use std::path::Path;
 use tracing::info;
 
+pub mod arkts_parser;
 pub mod java_parser;
 
+pub use arkts_parser::ArkTsParser;
 pub use java_parser::JavaParser;
 
 /// Trait for SDK parsers
@@ -32,12 +34,7 @@ pub fn parse_sdk(platform: Platform, sdk_path: &Path) -> Result<Vec<ApiSpec>, Cr
 
     let parser: Box<dyn SdkParser> = match platform {
         Platform::Android => Box::new(JavaParser::new()),
-        Platform::Harmony => {
-            // TODO: Implement ArkTS parser
-            return Err(CraftError::Parse(
-                "HarmonyOS SDK parsing not yet implemented".to_string(),
-            ));
-        }
+        Platform::Harmony => Box::new(ArkTsParser::new()),
     };
 
     parser.parse_directory(sdk_path)

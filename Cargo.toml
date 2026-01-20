@@ -39,6 +39,7 @@ reqwest = { version = "0.11", features = ["json"] }
 # Parsing
 tree-sitter = "0.20"
 tree-sitter-java = "0.20"
+tree-sitter-typescript = "0.20"
 
 # Error handling
 thiserror = "1.0"

@@ -10,6 +10,7 @@ description = "SDK parsers using tree-sitter for CRAFT"
 craft-core = { workspace = true }
 tree-sitter = { workspace = true }
 tree-sitter-java = { workspace = true }
+tree-sitter-typescript = { workspace = true }
 serde = { workspace = true }
 serde_yaml = { workspace = true }
 thiserror = { workspace = true }
