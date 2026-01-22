@@ -2,18 +2,23 @@
  * CRAFT 自动生成 - UIAbility
  * 源自: com.example.counter.MainActivity
  *
+ * API 风格: OpenHarmony (@ohos.xxx)
+ * 兼容: OpenHarmony 3.2+ / HarmonyOS 3.0+
+ *
  * API 映射:
  * - Activity.onCreate() -> UIAbility.onCreate()
  * - Activity.finish() -> UIAbilityContext.terminateSelf()
  * - Activity.onDestroy() -> UIAbility.onDestroy()
  */
 
-import { UIAbility, AbilityConstant, Want } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import UIAbility from '@ohos.app.ability.UIAbility';
+import AbilityConstant from '@ohos.app.ability.AbilityConstant';
+import Want from '@ohos.app.ability.Want';
+import window from '@ohos.window';
+import hilog from '@ohos.hilog';
 
-const TAG = 'EntryAbility';
-const DOMAIN = 0x0000;
+const TAG: string = 'EntryAbility';
+const DOMAIN: number = 0x0000;
 
 export default class EntryAbility extends UIAbility {
 
@@ -26,14 +31,14 @@ export default class EntryAbility extends UIAbility {
     }
 
     /**
-     * HarmonyOS 特有: 窗口舞台创建
+     * OpenHarmony 特有: 窗口舞台创建
      * 对应 Android: Activity.setContentView()
      */
     onWindowStageCreate(windowStage: window.WindowStage): void {
         hilog.info(DOMAIN, TAG, 'onWindowStageCreate - 加载页面');
 
         // 加载主页面 (对应 setContentView)
-        windowStage.loadContent('pages/Index', (err) => {
+        windowStage.loadContent('pages/Index', (err, data) => {
             if (err.code) {
                 hilog.error(DOMAIN, TAG, '页面加载失败: %{public}s', JSON.stringify(err));
                 return;

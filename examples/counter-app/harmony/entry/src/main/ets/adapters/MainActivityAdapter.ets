@@ -2,20 +2,23 @@
  * CRAFT 自动生成 - Android API 适配器
  * 源自: com.example.counter.MainActivity
  *
+ * API 风格: OpenHarmony (@ohos.xxx)
+ * 兼容: OpenHarmony 3.2+ / HarmonyOS 3.0+
+ *
  * 提供 Android Activity API 兼容层
  */
 
-import { UIAbility } from '@kit.AbilityKit';
-import { common } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import UIAbility from '@ohos.app.ability.UIAbility';
+import common from '@ohos.app.ability.common';
+import hilog from '@ohos.hilog';
 
-const TAG = 'MainActivityAdapter';
-const DOMAIN = 0x0000;
+const TAG: string = 'MainActivityAdapter';
+const DOMAIN: number = 0x0000;
 
 /**
  * Android Activity API 适配器
  *
- * 将 Android API 调用委托给 HarmonyOS API:
+ * 将 Android API 调用委托给 OpenHarmony API:
  * - finish() -> terminateSelf()
  * - onCreate() -> onCreate()
  * - onDestroy() -> onDestroy()
@@ -36,7 +39,7 @@ export class MainActivityAdapter {
      *       // 关闭 Activity，触发 onDestroy
      *   }
      *
-     * HarmonyOS 实现:
+     * OpenHarmony 实现:
      *   terminateSelf() - 关闭当前 UIAbility
      */
     finish(): void {

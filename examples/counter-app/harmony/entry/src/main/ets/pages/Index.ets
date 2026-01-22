@@ -2,6 +2,9 @@
  * CRAFT 自动生成 - ArkUI 页面
  * 对应 Android: activity_main.xml + MainActivity.java
  *
+ * API 风格: OpenHarmony (@ohos.xxx)
+ * 兼容: OpenHarmony 3.2+ / HarmonyOS 3.0+
+ *
  * 功能:
  * 1. 显示 "Hello World" 文本
  * 2. 点击按钮关闭窗口
@@ -13,11 +16,11 @@
  * - Activity.finish() -> terminateSelf()
  */
 
-import { common } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import common from '@ohos.app.ability.common';
+import hilog from '@ohos.hilog';
 
-const TAG = 'IndexPage';
-const DOMAIN = 0x0000;
+const TAG: string = 'IndexPage';
+const DOMAIN: number = 0x0000;
 
 @Entry
 @Component
@@ -27,7 +30,7 @@ struct Index {
      * 获取 UIAbility 上下文
      * 用于调用 terminateSelf() 关闭窗口
      */
-    private context = getContext(this) as common.UIAbilityContext;
+    private context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
 
     /**
      * 构建 UI
@@ -72,7 +75,7 @@ struct Index {
      * Android 代码:
      *   finish();
      *
-     * HarmonyOS 代码:
+     * OpenHarmony 代码:
      *   this.context.terminateSelf();
      */
     closeWindow(): void {

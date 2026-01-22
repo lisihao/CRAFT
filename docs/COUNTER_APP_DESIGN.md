@@ -1,7 +1,8 @@
 # Hello World 示例应用设计文档
 
-> 版本: 1.1.0 | 日期: 2026-01-21
+> 版本: 1.2.0 | 日期: 2026-01-21
 > 路径: examples/counter-app/
+> API 风格: **OpenHarmony (@ohos.xxx)**
 
 ---
 
@@ -10,6 +11,19 @@
 ### 1.1 功能描述
 
 Hello World 是一个最简单的 Android 应用，用于演示 CRAFT 框架的核心 API 映射能力。
+
+### 1.2 API 风格说明
+
+本示例使用 **OpenHarmony API 风格**，原因：
+
+| 特性 | OpenHarmony | HarmonyOS NEXT |
+|------|-------------|----------------|
+| 开源 | ✅ 完全开源 | ❌ 未开源 |
+| 可验证 | ✅ 可编译运行 | ❌ 需商业授权 |
+| 导入风格 | `@ohos.xxx` | `@kit.xxx` |
+| 兼容性 | OpenHarmony 3.2+ | HarmonyOS 5.0+ |
+
+**注意**: `@ohos.xxx` API 同时兼容 OpenHarmony 和 HarmonyOS 3.0+。
 
 **应用功能:**
 
@@ -34,7 +48,7 @@ Hello World 是一个最简单的 Android 应用，用于演示 CRAFT 框架的�
 └─────────────────────────────┘
 ```
 
-### 1.2 项目结构
+### 1.3 项目结构
 
 ```
 examples/counter-app/
@@ -330,17 +344,22 @@ closeButton.setOnClickListener(new View.OnClickListener() {
 /**
  * CRAFT 自动生成 - ArkUI 页面
  * 对应 Android: activity_main.xml + MainActivity.java
+ *
+ * API 风格: OpenHarmony (@ohos.xxx)
  */
 
-import { common } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import common from '@ohos.app.ability.common';
+import hilog from '@ohos.hilog';
+
+const TAG: string = 'IndexPage';
+const DOMAIN: number = 0x0000;
 
 @Entry
 @Component
 struct Index {
 
     // 获取 UIAbility 上下文，用于调用 terminateSelf()
-    private context = getContext(this) as common.UIAbilityContext;
+    private context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
 
     build() {
         // Column 对应 Android LinearLayout (vertical)
@@ -374,6 +393,7 @@ struct Index {
      * 对应 Android: Activity.finish()
      */
     closeWindow(): void {
+        hilog.info(DOMAIN, TAG, '关闭窗口 - 对应 Activity.finish()');
         // terminateSelf() 对应 Android finish()
         this.context.terminateSelf();
     }
@@ -386,9 +406,15 @@ struct Index {
 /**
  * CRAFT 自动生成 - Android API 适配器
  * 提供 Android Activity API 兼容层
+ *
+ * API 风格: OpenHarmony (@ohos.xxx)
  */
 
-import { common } from '@kit.AbilityKit';
+import common from '@ohos.app.ability.common';
+import hilog from '@ohos.hilog';
+
+const TAG: string = 'MainActivityAdapter';
+const DOMAIN: number = 0x0000;
 
 export class MainActivityAdapter {
     private context: common.UIAbilityContext;
@@ -402,11 +428,17 @@ export class MainActivityAdapter {
      * 映射到: UIAbilityContext.terminateSelf()
      */
     finish(): void {
+        hilog.info(DOMAIN, TAG, 'finish() called -> terminateSelf()');
         this.context.terminateSelf();
     }
 
-    onCreate(): void { }
-    onDestroy(): void { }
+    onCreate(): void {
+        hilog.info(DOMAIN, TAG, 'onCreate() called');
+    }
+
+    onDestroy(): void {
+        hilog.info(DOMAIN, TAG, 'onDestroy() called');
+    }
 }
 ```
 
@@ -595,6 +627,7 @@ Activity.finish()      ──────►   UIAbilityContext.terminateSelf()
 
 ---
 
-*文档版本: 1.1.0*
+*文档版本: 1.2.0*
 *更新日期: 2026-01-21*
 *项目路径: examples/counter-app/*
+*API 风格: OpenHarmony (@ohos.xxx)*
