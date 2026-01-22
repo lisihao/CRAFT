@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Counter App - CRAFT Generated"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Counter Application Entry"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "Counter"
+    }
+  ]
+}
