@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 """
-CRAFT Framework - Counter App Adapter Generator
+CRAFT Framework - Hello World App Adapter Generator
 
-This script parses the Android Counter app and generates:
-1. Adapter layer (compatibility bridge)
-2. HarmonyOS UIAbility implementation
-3. ArkUI component for the UI
+这个脚本解析 Android Hello World 应用并生成:
+1. 适配器层 (Android API 兼容层)
+2. HarmonyOS UIAbility 实现
+3. ArkUI 页面组件
 """
 
 import os
 import re
-import sys
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional, Tuple
+from typing import List, Optional, Tuple
 from pathlib import Path
 
 # ============================================================================
-# Data Models
+# 数据模型
 # ============================================================================
 
 @dataclass
@@ -25,7 +24,6 @@ class MethodInfo:
     return_type: str
     parameters: List[Tuple[str, str]]  # [(type, name), ...]
     is_lifecycle: bool = False
-    body: str = ""
 
 @dataclass
 class ClassInfo:
@@ -33,73 +31,44 @@ class ClassInfo:
     name: str
     parent: Optional[str]
     methods: List[MethodInfo] = field(default_factory=list)
-    fields: List[Tuple[str, str, str]] = field(default_factory=list)  # [(modifier, type, name), ...]
 
 # ============================================================================
-# Java Parser
+# Java 解析器
 # ============================================================================
 
 class JavaParser:
-    """Parse Java source files to extract class information."""
+    """解析 Java 源文件"""
 
     def __init__(self):
-        self.lifecycle_methods = {
-            'onCreate', 'onStart', 'onResume', 'onPause',
-            'onStop', 'onDestroy', 'onSaveInstanceState', 'onRestoreInstanceState'
-        }
+        self.lifecycle_methods = {'onCreate', 'onDestroy', 'onStart', 'onStop', 'onResume', 'onPause'}
 
     def parse_file(self, filepath: str) -> ClassInfo:
-        """Parse a Java file and extract class information."""
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        # Extract package
+        # 提取包名
         package_match = re.search(r'package\s+([\w.]+);', content)
         package = package_match.group(1) if package_match else ""
 
-        # Extract class declaration
-        class_match = re.search(
-            r'public\s+class\s+(\w+)(?:\s+extends\s+(\w+))?',
-            content
-        )
+        # 提取类信息
+        class_match = re.search(r'public\s+class\s+(\w+)(?:\s+extends\s+(\w+))?', content)
         class_name = class_match.group(1) if class_match else "Unknown"
         parent_class = class_match.group(2) if class_match and class_match.group(2) else None
 
-        # Extract fields
-        fields = self._extract_fields(content)
-
-        # Extract methods
+        # 提取方法
         methods = self._extract_methods(content)
 
-        return ClassInfo(
-            package=package,
-            name=class_name,
-            parent=parent_class,
-            methods=methods,
-            fields=fields
-        )
-
-    def _extract_fields(self, content: str) -> List[Tuple[str, str, str]]:
-        """Extract field declarations."""
-        fields = []
-        field_pattern = r'(private|protected|public)\s+(?:static\s+)?(?:final\s+)?(\w+(?:<[\w<>,\s]+>)?)\s+(\w+)\s*[;=]'
-        for match in re.finditer(field_pattern, content):
-            fields.append((match.group(1), match.group(2), match.group(3)))
-        return fields
+        return ClassInfo(package=package, name=class_name, parent=parent_class, methods=methods)
 
     def _extract_methods(self, content: str) -> List[MethodInfo]:
-        """Extract method declarations with their bodies."""
         methods = []
-
-        # Pattern to match method declarations
-        method_pattern = r'(?:@\w+\s+)*(?:public|protected|private)\s+(?:static\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{'
+        method_pattern = r'(?:@\w+\s+)*(?:public|protected|private)\s+(\w+)\s+(\w+)\s*\(([^)]*)\)'
 
         for match in re.finditer(method_pattern, content):
             return_type = match.group(1)
             method_name = match.group(2)
             params_str = match.group(3).strip()
 
-            # Parse parameters
             parameters = []
             if params_str:
                 for param in params_str.split(','):
@@ -109,295 +78,97 @@ class JavaParser:
                         if len(parts) == 2:
                             parameters.append((parts[0], parts[1]))
 
-            # Extract method body (find matching braces)
-            start_pos = match.end() - 1
-            body = self._extract_body(content, start_pos)
-
             methods.append(MethodInfo(
                 name=method_name,
                 return_type=return_type,
                 parameters=parameters,
-                is_lifecycle=method_name in self.lifecycle_methods,
-                body=body
+                is_lifecycle=method_name in self.lifecycle_methods
             ))
 
         return methods
 
-    def _extract_body(self, content: str, start_pos: int) -> str:
-        """Extract method body by matching braces."""
-        brace_count = 0
-        body_start = start_pos + 1
-        i = start_pos
-
-        while i < len(content):
-            if content[i] == '{':
-                brace_count += 1
-            elif content[i] == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    return content[body_start:i].strip()
-            i += 1
-
-        return ""
-
 # ============================================================================
-# Lifecycle Mapping
+# API 映射
 # ============================================================================
 
-LIFECYCLE_MAPPING = {
+# Activity.finish() -> terminateSelf() 映射
+API_MAPPING = {
+    'finish': {
+        'target': 'terminateSelf',
+        'description': 'Close the current ability window',
+        'harmony_api': 'UIAbilityContext.terminateSelf()'
+    },
     'onCreate': {
         'target': 'onCreate',
-        'param_transform': 'want: Want, launchParam: AbilityConstant.LaunchParam',
-        'note': 'Bundle data should be passed via Want.parameters'
-    },
-    'onStart': {
-        'target': 'onForeground',
-        'param_transform': '',
-        'note': 'Android onStart maps to HarmonyOS onForeground'
-    },
-    'onResume': {
-        'target': 'onForeground',
-        'param_transform': '',
-        'note': 'Android onResume also maps to onForeground (combined state)'
-    },
-    'onPause': {
-        'target': 'onBackground',
-        'param_transform': '',
-        'note': 'Android onPause maps to HarmonyOS onBackground'
-    },
-    'onStop': {
-        'target': 'onBackground',
-        'param_transform': '',
-        'note': 'Android onStop also maps to onBackground (combined state)'
+        'description': 'Ability creation lifecycle',
+        'harmony_api': 'UIAbility.onCreate(Want, LaunchParam)'
     },
     'onDestroy': {
         'target': 'onDestroy',
-        'param_transform': '',
-        'note': 'Direct mapping'
-    },
-    'onSaveInstanceState': {
-        'target': 'onSaveState',
-        'param_transform': 'reason: AbilityConstant.StateType',
-        'note': 'Use AppStorage or PersistentStorage for state'
-    },
-    'onRestoreInstanceState': {
-        'target': 'onCreate',
-        'param_transform': '',
-        'note': 'Restore from Want.parameters or storage'
+        'description': 'Ability destruction lifecycle',
+        'harmony_api': 'UIAbility.onDestroy()'
     }
 }
 
 # ============================================================================
-# Code Generators
+# 代码生成器
 # ============================================================================
 
-class AdapterGenerator:
-    """Generate adapter layer code."""
-
-    def generate_adapter(self, class_info: ClassInfo) -> str:
-        """Generate TypeScript/ArkTS adapter class."""
-
-        adapter_code = f'''/**
- * CRAFT Auto-Generated Adapter
- * Source: {class_info.package}.{class_info.name}
- *
- * This adapter provides Android Activity API compatibility over HarmonyOS UIAbility.
- */
-
-import {{ UIAbility, AbilityConstant, Want }} from '@kit.AbilityKit';
-import {{ hilog }} from '@kit.PerformanceAnalysisKit';
-import {{ window }} from '@kit.ArkUI';
-
-const TAG = '{class_info.name}Adapter';
-const DOMAIN = 0x0000;
-
-/**
- * Adapter providing Android {class_info.name} API compatibility.
- * Delegates lifecycle and state management to UIAbility.
- */
-export class {class_info.name}Adapter {{
-    private context: UIAbility;
-    private windowStage: window.WindowStage | null = null;
-
-    // State fields adapted from Android
-'''
-
-        # Add state fields
-        for modifier, field_type, field_name in class_info.fields:
-            ts_type = self._java_to_ts_type(field_type)
-            adapter_code += f'    private {field_name}: {ts_type};\n'
-
-        adapter_code += f'''
-    constructor(context: UIAbility) {{
-        this.context = context;
-'''
-
-        # Initialize fields
-        for modifier, field_type, field_name in class_info.fields:
-            default_value = self._get_default_value(field_type)
-            adapter_code += f'        this.{field_name} = {default_value};\n'
-
-        adapter_code += '''    }
-
-    /**
-     * Get the UIAbility context
-     */
-    getContext(): UIAbility {
-        return this.context;
-    }
-
-    /**
-     * Set the WindowStage for UI operations
-     */
-    setWindowStage(windowStage: window.WindowStage): void {
-        this.windowStage = windowStage;
-    }
-'''
-
-        # Generate lifecycle method adapters
-        for method in class_info.methods:
-            if method.is_lifecycle:
-                adapter_code += self._generate_lifecycle_adapter(method)
-            elif method.name not in ['updateDisplay']:  # Skip internal methods
-                adapter_code += self._generate_method_adapter(method)
-
-        adapter_code += '}\n'
-
-        return adapter_code
-
-    def _generate_lifecycle_adapter(self, method: MethodInfo) -> str:
-        """Generate lifecycle method adapter."""
-        mapping = LIFECYCLE_MAPPING.get(method.name, {})
-        target = mapping.get('target', method.name)
-        note = mapping.get('note', '')
-
-        return f'''
-    /**
-     * Lifecycle: {method.name} -> {target}
-     * {note}
-     */
-    {method.name}(): void {{
-        hilog.info(DOMAIN, TAG, '{method.name} called (maps to {target})');
-    }}
-'''
-
-    def _generate_method_adapter(self, method: MethodInfo) -> str:
-        """Generate regular method adapter."""
-        ts_params = ', '.join([
-            f'{name}: {self._java_to_ts_type(ptype)}'
-            for ptype, name in method.parameters
-        ])
-        ts_return = self._java_to_ts_type(method.return_type)
-
-        return f'''
-    /**
-     * Adapted method: {method.name}
-     */
-    {method.name}({ts_params}): {ts_return} {{
-        hilog.info(DOMAIN, TAG, '{method.name} called');
-'''  + self._generate_method_body(method) + '''    }
-'''
-
-    def _generate_method_body(self, method: MethodInfo) -> str:
-        """Generate method body based on return type."""
-        if method.return_type == 'void':
-            return ''
-        elif method.return_type == 'int':
-            return '        return 0;\n'
-        elif method.return_type == 'boolean':
-            return '        return false;\n'
-        elif method.return_type == 'String':
-            return '        return "";\n'
-        else:
-            return '        return null;\n'
-
-    def _java_to_ts_type(self, java_type: str) -> str:
-        """Convert Java type to TypeScript type."""
-        type_map = {
-            'void': 'void',
-            'int': 'number',
-            'long': 'number',
-            'float': 'number',
-            'double': 'number',
-            'boolean': 'boolean',
-            'String': 'string',
-            'CharSequence': 'string',
-            'Bundle': 'Record<string, Object>',
-            'View': 'Object',
-            'Button': 'Object',
-            'TextView': 'Object'
-        }
-        return type_map.get(java_type, 'Object')
-
-    def _get_default_value(self, java_type: str) -> str:
-        """Get default value for a Java type."""
-        defaults = {
-            'int': '0',
-            'long': '0',
-            'float': '0',
-            'double': '0',
-            'boolean': 'false',
-            'String': '""',
-        }
-        return defaults.get(java_type, 'null')
-
-
 class HarmonyGenerator:
-    """Generate HarmonyOS UIAbility and UI code."""
+    """生成 HarmonyOS 代码"""
 
     def generate_ability(self, class_info: ClassInfo) -> str:
-        """Generate HarmonyOS UIAbility class."""
-
+        """生成 UIAbility"""
         return f'''/**
- * CRAFT Auto-Generated UIAbility
- * Adapted from: {class_info.package}.{class_info.name}
+ * CRAFT 自动生成 - UIAbility
+ * 源自: {class_info.package}.{class_info.name}
+ *
+ * API 映射:
+ * - Activity.onCreate() -> UIAbility.onCreate()
+ * - Activity.finish() -> UIAbilityContext.terminateSelf()
+ * - Activity.onDestroy() -> UIAbility.onDestroy()
  */
 
 import {{ UIAbility, AbilityConstant, Want }} from '@kit.AbilityKit';
 import {{ hilog }} from '@kit.PerformanceAnalysisKit';
 import {{ window }} from '@kit.ArkUI';
-import {{ {class_info.name}Adapter }} from '../adapters/{class_info.name}Adapter';
 
 const TAG = 'EntryAbility';
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {{
-    private adapter: {class_info.name}Adapter;
-    private counter: number = 0;
 
+    /**
+     * 对应 Android: Activity.onCreate(Bundle)
+     * 功能: 初始化 Ability
+     */
     onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {{
-        hilog.info(DOMAIN, TAG, 'onCreate');
-
-        // Initialize the Android compatibility adapter
-        this.adapter = new {class_info.name}Adapter(this);
-
-        // Restore state from Want if available
-        if (want.parameters && want.parameters['counter_value']) {{
-            this.counter = want.parameters['counter_value'] as number;
-        }}
-
-        // Call Android-style onCreate via adapter
-        this.adapter.onCreate();
+        hilog.info(DOMAIN, TAG, 'onCreate - 窗口创建');
     }}
 
-    onDestroy(): void {{
-        hilog.info(DOMAIN, TAG, 'onDestroy');
-        this.adapter.onDestroy();
-    }}
-
+    /**
+     * HarmonyOS 特有: 窗口舞台创建
+     * 对应 Android: Activity.setContentView()
+     */
     onWindowStageCreate(windowStage: window.WindowStage): void {{
-        hilog.info(DOMAIN, TAG, 'onWindowStageCreate');
+        hilog.info(DOMAIN, TAG, 'onWindowStageCreate - 加载页面');
 
-        this.adapter.setWindowStage(windowStage);
-
-        // Load the main page
+        // 加载主页面 (对应 setContentView)
         windowStage.loadContent('pages/Index', (err) => {{
             if (err.code) {{
-                hilog.error(DOMAIN, TAG, 'Failed to load content: %{{public}}s', JSON.stringify(err));
+                hilog.error(DOMAIN, TAG, '页面加载失败: %{{public}}s', JSON.stringify(err));
                 return;
             }}
-            hilog.info(DOMAIN, TAG, 'Content loaded successfully');
+            hilog.info(DOMAIN, TAG, '页面加载成功');
         }});
+    }}
+
+    /**
+     * 对应 Android: Activity.onDestroy()
+     * 功能: 释放资源
+     */
+    onDestroy(): void {{
+        hilog.info(DOMAIN, TAG, 'onDestroy - 窗口关闭');
     }}
 
     onWindowStageDestroy(): void {{
@@ -405,135 +176,77 @@ export default class EntryAbility extends UIAbility {{
     }}
 
     onForeground(): void {{
-        hilog.info(DOMAIN, TAG, 'onForeground');
-        // Maps to Android onStart + onResume
-        this.adapter.onStart();
-        this.adapter.onResume();
+        hilog.info(DOMAIN, TAG, 'onForeground - 进入前台');
     }}
 
     onBackground(): void {{
-        hilog.info(DOMAIN, TAG, 'onBackground');
-        // Maps to Android onPause + onStop
-        this.adapter.onPause();
-        this.adapter.onStop();
-    }}
-
-    onSaveState(reason: AbilityConstant.StateType): AbilityConstant.OnSaveResult {{
-        hilog.info(DOMAIN, TAG, 'onSaveState, reason: %{{public}}d', reason);
-        // Corresponds to Android onSaveInstanceState
-        this.adapter.onSaveInstanceState();
-        return AbilityConstant.OnSaveResult.ALL_AGREE;
-    }}
-
-    // Expose counter operations for the UI
-    getCounter(): number {{
-        return this.counter;
-    }}
-
-    setCounter(value: number): void {{
-        this.counter = value;
+        hilog.info(DOMAIN, TAG, 'onBackground - 进入后台');
     }}
 }}
 '''
 
-    def generate_ui_page(self, class_info: ClassInfo) -> str:
-        """Generate ArkUI page component."""
-
+    def generate_page(self, class_info: ClassInfo) -> str:
+        """生成 ArkUI 页面"""
         return '''/**
- * CRAFT Auto-Generated ArkUI Page
- * Counter App - Adapted from Android Layout
+ * CRAFT 自动生成 - ArkUI 页面
+ * 对应 Android: activity_main.xml + MainActivity.java
+ *
+ * 功能:
+ * 1. 显示 "Hello World" 文本
+ * 2. 点击按钮关闭窗口
+ *
+ * API 映射:
+ * - TextView -> Text 组件
+ * - Button -> Button 组件
+ * - Button.setOnClickListener() -> Button.onClick()
+ * - Activity.finish() -> terminateSelf()
  */
 
-import { router } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
-// Application state using AppStorage for persistence
-const counterKey = 'counter_value';
+const TAG = 'IndexPage';
+const DOMAIN = 0x0000;
 
 @Entry
 @Component
 struct Index {
-    @State counter: number = 0;
 
-    aboutToAppear(): void {
-        // Restore state from AppStorage (equivalent to onRestoreInstanceState)
-        const savedCounter = AppStorage.get<number>(counterKey);
-        if (savedCounter !== undefined) {
-            this.counter = savedCounter;
-        }
-    }
+    /**
+     * 获取 UIAbility 上下文
+     * 用于调用 terminateSelf() 关闭窗口
+     */
+    private context = getContext(this) as common.UIAbilityContext;
 
-    aboutToDisappear(): void {
-        // Save state to AppStorage (equivalent to onSaveInstanceState)
-        AppStorage.setOrCreate(counterKey, this.counter);
-    }
-
+    /**
+     * 构建 UI
+     * 对应 Android: activity_main.xml
+     */
     build() {
+        // Column 对应 Android LinearLayout (vertical)
         Column() {
-            // Title
-            Text('Counter App')
-                .fontSize(28)
+
+            // Text 对应 Android TextView
+            // android:text="Hello World"
+            Text('Hello World')
+                .fontSize(32)
                 .fontWeight(FontWeight.Bold)
                 .fontColor('#333333')
-                .margin({ bottom: 40 })
+                .margin({ bottom: 48 })
 
-            // Counter Display
-            Text(this.counter.toString())
-                .fontSize(80)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#007AFF')
-                .margin({ bottom: 60 })
+            // Button 对应 Android Button
+            // android:id="@+id/btn_close"
+            Button('关闭窗口')
+                .width(200)
+                .height(60)
+                .fontSize(18)
+                .fontColor(Color.White)
+                .backgroundColor('#FF3B30')
+                .borderRadius(8)
+                .onClick(() => {
+                    this.closeWindow();
+                })
 
-            // Button Row
-            Row() {
-                // Decrement Button
-                Button('-')
-                    .width(90)
-                    .height(90)
-                    .fontSize(40)
-                    .fontColor(Color.White)
-                    .backgroundColor('#FF3B30')
-                    .borderRadius(45)
-                    .onClick(() => {
-                        this.decrement();
-                    })
-
-                // Reset Button
-                Button('0')
-                    .width(90)
-                    .height(90)
-                    .fontSize(32)
-                    .fontColor(Color.White)
-                    .backgroundColor('#8E8E93')
-                    .borderRadius(45)
-                    .margin({ left: 20, right: 20 })
-                    .onClick(() => {
-                        this.reset();
-                    })
-
-                // Increment Button
-                Button('+')
-                    .width(90)
-                    .height(90)
-                    .fontSize(40)
-                    .fontColor(Color.White)
-                    .backgroundColor('#34C759')
-                    .borderRadius(45)
-                    .onClick(() => {
-                        this.increment();
-                    })
-            }
-            .justifyContent(FlexAlign.Center)
-
-            // Footer
-            Text('Powered by CRAFT Framework')
-                .fontSize(14)
-                .fontColor('#999999')
-                .margin({ top: 60 })
-
-            Text('Android -> HarmonyOS Adapter')
-                .fontSize(12)
-                .fontColor('#CCCCCC')
-                .margin({ top: 8 })
         }
         .width('100%')
         .height('100%')
@@ -542,125 +255,179 @@ struct Index {
     }
 
     /**
-     * Increment counter - adapted from MainActivity.increment()
+     * 关闭窗口
+     * 对应 Android: Activity.finish()
+     *
+     * Android 代码:
+     *   finish();
+     *
+     * HarmonyOS 代码:
+     *   this.context.terminateSelf();
      */
-    increment(): void {
-        this.counter++;
-        this.saveState();
-    }
+    closeWindow(): void {
+        hilog.info(DOMAIN, TAG, '关闭窗口 - 对应 Activity.finish()');
 
-    /**
-     * Decrement counter - adapted from MainActivity.decrement()
-     */
-    decrement(): void {
-        this.counter--;
-        this.saveState();
-    }
-
-    /**
-     * Reset counter - adapted from MainActivity.reset()
-     */
-    reset(): void {
-        this.counter = 0;
-        this.saveState();
-    }
-
-    /**
-     * Save state to persistent storage
-     */
-    private saveState(): void {
-        AppStorage.setOrCreate(counterKey, this.counter);
+        // terminateSelf() 对应 Android finish()
+        this.context.terminateSelf((err) => {
+            if (err.code) {
+                hilog.error(DOMAIN, TAG, '关闭失败: %{public}s', JSON.stringify(err));
+                return;
+            }
+            hilog.info(DOMAIN, TAG, '窗口已关闭');
+        });
     }
 }
 '''
 
+    def generate_adapter(self, class_info: ClassInfo) -> str:
+        """生成适配器层"""
+        return f'''/**
+ * CRAFT 自动生成 - Android API 适配器
+ * 源自: {class_info.package}.{class_info.name}
+ *
+ * 提供 Android Activity API 兼容层
+ */
+
+import {{ UIAbility }} from '@kit.AbilityKit';
+import {{ common }} from '@kit.AbilityKit';
+import {{ hilog }} from '@kit.PerformanceAnalysisKit';
+
+const TAG = '{class_info.name}Adapter';
+const DOMAIN = 0x0000;
+
+/**
+ * Android Activity API 适配器
+ *
+ * 将 Android API 调用委托给 HarmonyOS API:
+ * - finish() -> terminateSelf()
+ * - onCreate() -> onCreate()
+ * - onDestroy() -> onDestroy()
+ */
+export class {class_info.name}Adapter {{
+    private context: common.UIAbilityContext;
+
+    constructor(context: common.UIAbilityContext) {{
+        this.context = context;
+    }}
+
+    /**
+     * 对应 Android: Activity.finish()
+     * 功能: 关闭当前 Activity/Ability 窗口
+     *
+     * Android 实现:
+     *   public void finish() {{
+     *       // 关闭 Activity，触发 onDestroy
+     *   }}
+     *
+     * HarmonyOS 实现:
+     *   terminateSelf() - 关闭当前 UIAbility
+     */
+    finish(): void {{
+        hilog.info(DOMAIN, TAG, 'finish() called -> terminateSelf()');
+        this.context.terminateSelf();
+    }}
+
+    /**
+     * 对应 Android: Activity.onCreate(Bundle)
+     */
+    onCreate(): void {{
+        hilog.info(DOMAIN, TAG, 'onCreate() called');
+    }}
+
+    /**
+     * 对应 Android: Activity.onDestroy()
+     */
+    onDestroy(): void {{
+        hilog.info(DOMAIN, TAG, 'onDestroy() called');
+    }}
+}}
+'''
+
 
 # ============================================================================
-# Main Generator Script
+# 主函数
 # ============================================================================
 
 def main():
     print("=" * 70)
-    print("  CRAFT Framework - Counter App Generator")
-    print("  Android -> HarmonyOS Adaptation")
+    print("  CRAFT Framework - Hello World App Generator")
+    print("  Android -> HarmonyOS 适配")
     print("=" * 70)
     print()
 
-    # Paths
     script_dir = Path(__file__).parent
     android_src = script_dir / "android/app/src/main/java/com/example/counter/MainActivity.java"
     harmony_dir = script_dir / "harmony/entry/src/main/ets"
 
-    # Step 1: Parse Android source
-    print("[1/4] Parsing Android source...")
+    # 解析 Android 源码
+    print("[1/4] 解析 Android 源码...")
     parser = JavaParser()
     class_info = parser.parse_file(str(android_src))
 
-    print(f"      Package: {class_info.package}")
-    print(f"      Class: {class_info.name}")
-    print(f"      Parent: {class_info.parent}")
-    print(f"      Methods: {len(class_info.methods)}")
+    print(f"      包名: {class_info.package}")
+    print(f"      类名: {class_info.name}")
+    print(f"      父类: {class_info.parent}")
+    print(f"      方法数: {len(class_info.methods)}")
     for m in class_info.methods:
-        lifecycle_tag = " [LIFECYCLE]" if m.is_lifecycle else ""
-        print(f"        - {m.return_type} {m.name}(){lifecycle_tag}")
+        tag = " [生命周期]" if m.is_lifecycle else ""
+        print(f"        - {m.return_type} {m.name}(){tag}")
     print()
 
-    # Step 2: Generate adapter
-    print("[2/4] Generating adapter layer...")
-    adapter_gen = AdapterGenerator()
-    adapter_code = adapter_gen.generate_adapter(class_info)
+    # 生成代码
+    generator = HarmonyGenerator()
 
-    adapter_dir = harmony_dir / "adapters"
-    adapter_dir.mkdir(parents=True, exist_ok=True)
-    adapter_file = adapter_dir / f"{class_info.name}Adapter.ets"
-
-    with open(adapter_file, 'w', encoding='utf-8') as f:
-        f.write(adapter_code)
-    print(f"      Generated: {adapter_file}")
-    print()
-
-    # Step 3: Generate UIAbility
-    print("[3/4] Generating UIAbility...")
-    harmony_gen = HarmonyGenerator()
-    ability_code = harmony_gen.generate_ability(class_info)
-
+    # 生成 UIAbility
+    print("[2/4] 生成 UIAbility...")
+    ability_code = generator.generate_ability(class_info)
     ability_file = harmony_dir / "EntryAbility.ets"
+    ability_file.parent.mkdir(parents=True, exist_ok=True)
     with open(ability_file, 'w', encoding='utf-8') as f:
         f.write(ability_code)
-    print(f"      Generated: {ability_file}")
-    print()
+    print(f"      生成: {ability_file.relative_to(script_dir)}")
 
-    # Step 4: Generate UI Page
-    print("[4/4] Generating ArkUI page...")
-    page_code = harmony_gen.generate_ui_page(class_info)
-
+    # 生成 ArkUI 页面
+    print("[3/4] 生成 ArkUI 页面...")
+    page_code = generator.generate_page(class_info)
     pages_dir = harmony_dir / "pages"
     pages_dir.mkdir(parents=True, exist_ok=True)
     page_file = pages_dir / "Index.ets"
-
     with open(page_file, 'w', encoding='utf-8') as f:
         f.write(page_code)
-    print(f"      Generated: {page_file}")
-    print()
+    print(f"      生成: {page_file.relative_to(script_dir)}")
 
-    # Summary
+    # 生成适配器
+    print("[4/4] 生成适配器层...")
+    adapter_code = generator.generate_adapter(class_info)
+    adapter_dir = harmony_dir / "adapters"
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    adapter_file = adapter_dir / f"{class_info.name}Adapter.ets"
+    with open(adapter_file, 'w', encoding='utf-8') as f:
+        f.write(adapter_code)
+    print(f"      生成: {adapter_file.relative_to(script_dir)}")
+
+    # 总结
+    print()
     print("=" * 70)
-    print("  Generation Complete!")
+    print("  生成完成!")
     print("=" * 70)
     print()
-    print("  Generated files:")
-    print(f"    1. Adapter:   {adapter_file.relative_to(script_dir)}")
-    print(f"    2. UIAbility: {ability_file.relative_to(script_dir)}")
-    print(f"    3. UI Page:   {page_file.relative_to(script_dir)}")
+    print("  API 映射:")
+    print("  ┌────────────────────────┬────────────────────────────────┐")
+    print("  │ Android API            │ HarmonyOS API                  │")
+    print("  ├────────────────────────┼────────────────────────────────┤")
+    print("  │ Activity.onCreate()    │ UIAbility.onCreate()           │")
+    print("  │ Activity.finish()      │ UIAbilityContext.terminateSelf │")
+    print("  │ Activity.onDestroy()   │ UIAbility.onDestroy()          │")
+    print("  │ setContentView()       │ windowStage.loadContent()      │")
+    print("  │ TextView               │ Text()                         │")
+    print("  │ Button                 │ Button()                       │")
+    print("  │ setOnClickListener()   │ .onClick()                     │")
+    print("  └────────────────────────┴────────────────────────────────┘")
     print()
-    print("  Lifecycle Mapping Applied:")
-    for android, harmony in LIFECYCLE_MAPPING.items():
-        print(f"    {android:25} -> {harmony['target']}")
-    print()
-    print("  To build HarmonyOS app:")
-    print("    1. Open DevEco Studio")
-    print("    2. Import harmony/ directory as project")
-    print("    3. Build and run on device/emulator")
+    print("  生成的文件:")
+    print(f"    1. {ability_file.relative_to(script_dir)}")
+    print(f"    2. {page_file.relative_to(script_dir)}")
+    print(f"    3. {adapter_file.relative_to(script_dir)}")
     print()
 
 if __name__ == '__main__':

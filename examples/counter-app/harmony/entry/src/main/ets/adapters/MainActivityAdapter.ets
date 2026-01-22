@@ -1,168 +1,60 @@
 /**
- * CRAFT Auto-Generated Adapter
- * Source: com.example.counter.MainActivity
+ * CRAFT 自动生成 - Android API 适配器
+ * 源自: com.example.counter.MainActivity
  *
- * This adapter provides Android Activity API compatibility over HarmonyOS UIAbility.
+ * 提供 Android Activity API 兼容层
  */
 
-import { UIAbility, AbilityConstant, Want } from '@kit.AbilityKit';
+import { UIAbility } from '@kit.AbilityKit';
+import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
 
 const TAG = 'MainActivityAdapter';
 const DOMAIN = 0x0000;
 
 /**
- * Adapter providing Android MainActivity API compatibility.
- * Delegates lifecycle and state management to UIAbility.
+ * Android Activity API 适配器
+ *
+ * 将 Android API 调用委托给 HarmonyOS API:
+ * - finish() -> terminateSelf()
+ * - onCreate() -> onCreate()
+ * - onDestroy() -> onDestroy()
  */
 export class MainActivityAdapter {
-    private context: UIAbility;
-    private windowStage: window.WindowStage | null = null;
+    private context: common.UIAbilityContext;
 
-    // State fields adapted from Android
-    private KEY_COUNT: string;
-    private counter: number;
-    private counterText: Object;
-    private incrementButton: Object;
-    private decrementButton: Object;
-    private resetButton: Object;
-
-    constructor(context: UIAbility) {
+    constructor(context: common.UIAbilityContext) {
         this.context = context;
-        this.KEY_COUNT = "";
-        this.counter = 0;
-        this.counterText = null;
-        this.incrementButton = null;
-        this.decrementButton = null;
-        this.resetButton = null;
     }
 
     /**
-     * Get the UIAbility context
+     * 对应 Android: Activity.finish()
+     * 功能: 关闭当前 Activity/Ability 窗口
+     *
+     * Android 实现:
+     *   public void finish() {
+     *       // 关闭 Activity，触发 onDestroy
+     *   }
+     *
+     * HarmonyOS 实现:
+     *   terminateSelf() - 关闭当前 UIAbility
      */
-    getContext(): UIAbility {
-        return this.context;
+    finish(): void {
+        hilog.info(DOMAIN, TAG, 'finish() called -> terminateSelf()');
+        this.context.terminateSelf();
     }
 
     /**
-     * Set the WindowStage for UI operations
-     */
-    setWindowStage(windowStage: window.WindowStage): void {
-        this.windowStage = windowStage;
-    }
-
-    /**
-     * Lifecycle: onCreate -> onCreate
-     * Bundle data should be passed via Want.parameters
+     * 对应 Android: Activity.onCreate(Bundle)
      */
     onCreate(): void {
-        hilog.info(DOMAIN, TAG, 'onCreate called (maps to onCreate)');
+        hilog.info(DOMAIN, TAG, 'onCreate() called');
     }
 
     /**
-     * Adapted method: onClick
-     */
-    onClick(v: Object): void {
-        hilog.info(DOMAIN, TAG, 'onClick called');
-    }
-
-    /**
-     * Adapted method: onClick
-     */
-    onClick(v: Object): void {
-        hilog.info(DOMAIN, TAG, 'onClick called');
-    }
-
-    /**
-     * Adapted method: onClick
-     */
-    onClick(v: Object): void {
-        hilog.info(DOMAIN, TAG, 'onClick called');
-    }
-
-    /**
-     * Lifecycle: onStart -> onForeground
-     * Android onStart maps to HarmonyOS onForeground
-     */
-    onStart(): void {
-        hilog.info(DOMAIN, TAG, 'onStart called (maps to onForeground)');
-    }
-
-    /**
-     * Lifecycle: onResume -> onForeground
-     * Android onResume also maps to onForeground (combined state)
-     */
-    onResume(): void {
-        hilog.info(DOMAIN, TAG, 'onResume called (maps to onForeground)');
-    }
-
-    /**
-     * Lifecycle: onPause -> onBackground
-     * Android onPause maps to HarmonyOS onBackground
-     */
-    onPause(): void {
-        hilog.info(DOMAIN, TAG, 'onPause called (maps to onBackground)');
-    }
-
-    /**
-     * Lifecycle: onStop -> onBackground
-     * Android onStop also maps to onBackground (combined state)
-     */
-    onStop(): void {
-        hilog.info(DOMAIN, TAG, 'onStop called (maps to onBackground)');
-    }
-
-    /**
-     * Lifecycle: onDestroy -> onDestroy
-     * Direct mapping
+     * 对应 Android: Activity.onDestroy()
      */
     onDestroy(): void {
-        hilog.info(DOMAIN, TAG, 'onDestroy called (maps to onDestroy)');
-    }
-
-    /**
-     * Lifecycle: onSaveInstanceState -> onSaveState
-     * Use AppStorage or PersistentStorage for state
-     */
-    onSaveInstanceState(): void {
-        hilog.info(DOMAIN, TAG, 'onSaveInstanceState called (maps to onSaveState)');
-    }
-
-    /**
-     * Lifecycle: onRestoreInstanceState -> onCreate
-     * Restore from Want.parameters or storage
-     */
-    onRestoreInstanceState(): void {
-        hilog.info(DOMAIN, TAG, 'onRestoreInstanceState called (maps to onCreate)');
-    }
-
-    /**
-     * Adapted method: increment
-     */
-    increment(): void {
-        hilog.info(DOMAIN, TAG, 'increment called');
-    }
-
-    /**
-     * Adapted method: decrement
-     */
-    decrement(): void {
-        hilog.info(DOMAIN, TAG, 'decrement called');
-    }
-
-    /**
-     * Adapted method: reset
-     */
-    reset(): void {
-        hilog.info(DOMAIN, TAG, 'reset called');
-    }
-
-    /**
-     * Adapted method: getCounter
-     */
-    getCounter(): number {
-        hilog.info(DOMAIN, TAG, 'getCounter called');
-        return 0;
+        hilog.info(DOMAIN, TAG, 'onDestroy() called');
     }
 }

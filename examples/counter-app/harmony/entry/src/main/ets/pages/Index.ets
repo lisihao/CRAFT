@@ -1,98 +1,63 @@
 /**
- * CRAFT Auto-Generated ArkUI Page
- * Counter App - Adapted from Android Layout
+ * CRAFT 自动生成 - ArkUI 页面
+ * 对应 Android: activity_main.xml + MainActivity.java
+ *
+ * 功能:
+ * 1. 显示 "Hello World" 文本
+ * 2. 点击按钮关闭窗口
+ *
+ * API 映射:
+ * - TextView -> Text 组件
+ * - Button -> Button 组件
+ * - Button.setOnClickListener() -> Button.onClick()
+ * - Activity.finish() -> terminateSelf()
  */
 
-import { router } from '@kit.ArkUI';
+import { common } from '@kit.AbilityKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
-// Application state using AppStorage for persistence
-const counterKey = 'counter_value';
+const TAG = 'IndexPage';
+const DOMAIN = 0x0000;
 
 @Entry
 @Component
 struct Index {
-    @State counter: number = 0;
 
-    aboutToAppear(): void {
-        // Restore state from AppStorage (equivalent to onRestoreInstanceState)
-        const savedCounter = AppStorage.get<number>(counterKey);
-        if (savedCounter !== undefined) {
-            this.counter = savedCounter;
-        }
-    }
+    /**
+     * 获取 UIAbility 上下文
+     * 用于调用 terminateSelf() 关闭窗口
+     */
+    private context = getContext(this) as common.UIAbilityContext;
 
-    aboutToDisappear(): void {
-        // Save state to AppStorage (equivalent to onSaveInstanceState)
-        AppStorage.setOrCreate(counterKey, this.counter);
-    }
-
+    /**
+     * 构建 UI
+     * 对应 Android: activity_main.xml
+     */
     build() {
+        // Column 对应 Android LinearLayout (vertical)
         Column() {
-            // Title
-            Text('Counter App')
-                .fontSize(28)
+
+            // Text 对应 Android TextView
+            // android:text="Hello World"
+            Text('Hello World')
+                .fontSize(32)
                 .fontWeight(FontWeight.Bold)
                 .fontColor('#333333')
-                .margin({ bottom: 40 })
+                .margin({ bottom: 48 })
 
-            // Counter Display
-            Text(this.counter.toString())
-                .fontSize(80)
-                .fontWeight(FontWeight.Bold)
-                .fontColor('#007AFF')
-                .margin({ bottom: 60 })
+            // Button 对应 Android Button
+            // android:id="@+id/btn_close"
+            Button('关闭窗口')
+                .width(200)
+                .height(60)
+                .fontSize(18)
+                .fontColor(Color.White)
+                .backgroundColor('#FF3B30')
+                .borderRadius(8)
+                .onClick(() => {
+                    this.closeWindow();
+                })
 
-            // Button Row
-            Row() {
-                // Decrement Button
-                Button('-')
-                    .width(90)
-                    .height(90)
-                    .fontSize(40)
-                    .fontColor(Color.White)
-                    .backgroundColor('#FF3B30')
-                    .borderRadius(45)
-                    .onClick(() => {
-                        this.decrement();
-                    })
-
-                // Reset Button
-                Button('0')
-                    .width(90)
-                    .height(90)
-                    .fontSize(32)
-                    .fontColor(Color.White)
-                    .backgroundColor('#8E8E93')
-                    .borderRadius(45)
-                    .margin({ left: 20, right: 20 })
-                    .onClick(() => {
-                        this.reset();
-                    })
-
-                // Increment Button
-                Button('+')
-                    .width(90)
-                    .height(90)
-                    .fontSize(40)
-                    .fontColor(Color.White)
-                    .backgroundColor('#34C759')
-                    .borderRadius(45)
-                    .onClick(() => {
-                        this.increment();
-                    })
-            }
-            .justifyContent(FlexAlign.Center)
-
-            // Footer
-            Text('Powered by CRAFT Framework')
-                .fontSize(14)
-                .fontColor('#999999')
-                .margin({ top: 60 })
-
-            Text('Android -> HarmonyOS Adapter')
-                .fontSize(12)
-                .fontColor('#CCCCCC')
-                .margin({ top: 8 })
         }
         .width('100%')
         .height('100%')
@@ -101,33 +66,25 @@ struct Index {
     }
 
     /**
-     * Increment counter - adapted from MainActivity.increment()
+     * 关闭窗口
+     * 对应 Android: Activity.finish()
+     *
+     * Android 代码:
+     *   finish();
+     *
+     * HarmonyOS 代码:
+     *   this.context.terminateSelf();
      */
-    increment(): void {
-        this.counter++;
-        this.saveState();
-    }
+    closeWindow(): void {
+        hilog.info(DOMAIN, TAG, '关闭窗口 - 对应 Activity.finish()');
 
-    /**
-     * Decrement counter - adapted from MainActivity.decrement()
-     */
-    decrement(): void {
-        this.counter--;
-        this.saveState();
-    }
-
-    /**
-     * Reset counter - adapted from MainActivity.reset()
-     */
-    reset(): void {
-        this.counter = 0;
-        this.saveState();
-    }
-
-    /**
-     * Save state to persistent storage
-     */
-    private saveState(): void {
-        AppStorage.setOrCreate(counterKey, this.counter);
+        // terminateSelf() 对应 Android finish()
+        this.context.terminateSelf((err) => {
+            if (err.code) {
+                hilog.error(DOMAIN, TAG, '关闭失败: %{public}s', JSON.stringify(err));
+                return;
+            }
+            hilog.info(DOMAIN, TAG, '窗口已关闭');
+        });
     }
 }

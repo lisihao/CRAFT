@@ -1,53 +1,53 @@
 /**
- * CRAFT Auto-Generated UIAbility
- * Adapted from: com.example.counter.MainActivity
+ * CRAFT 自动生成 - UIAbility
+ * 源自: com.example.counter.MainActivity
+ *
+ * API 映射:
+ * - Activity.onCreate() -> UIAbility.onCreate()
+ * - Activity.finish() -> UIAbilityContext.terminateSelf()
+ * - Activity.onDestroy() -> UIAbility.onDestroy()
  */
 
 import { UIAbility, AbilityConstant, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-import { MainActivityAdapter } from '../adapters/MainActivityAdapter';
 
 const TAG = 'EntryAbility';
 const DOMAIN = 0x0000;
 
 export default class EntryAbility extends UIAbility {
-    private adapter: MainActivityAdapter;
-    private counter: number = 0;
 
+    /**
+     * 对应 Android: Activity.onCreate(Bundle)
+     * 功能: 初始化 Ability
+     */
     onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-        hilog.info(DOMAIN, TAG, 'onCreate');
-
-        // Initialize the Android compatibility adapter
-        this.adapter = new MainActivityAdapter(this);
-
-        // Restore state from Want if available
-        if (want.parameters && want.parameters['counter_value']) {
-            this.counter = want.parameters['counter_value'] as number;
-        }
-
-        // Call Android-style onCreate via adapter
-        this.adapter.onCreate();
+        hilog.info(DOMAIN, TAG, 'onCreate - 窗口创建');
     }
 
-    onDestroy(): void {
-        hilog.info(DOMAIN, TAG, 'onDestroy');
-        this.adapter.onDestroy();
-    }
-
+    /**
+     * HarmonyOS 特有: 窗口舞台创建
+     * 对应 Android: Activity.setContentView()
+     */
     onWindowStageCreate(windowStage: window.WindowStage): void {
-        hilog.info(DOMAIN, TAG, 'onWindowStageCreate');
+        hilog.info(DOMAIN, TAG, 'onWindowStageCreate - 加载页面');
 
-        this.adapter.setWindowStage(windowStage);
-
-        // Load the main page
+        // 加载主页面 (对应 setContentView)
         windowStage.loadContent('pages/Index', (err) => {
             if (err.code) {
-                hilog.error(DOMAIN, TAG, 'Failed to load content: %{public}s', JSON.stringify(err));
+                hilog.error(DOMAIN, TAG, '页面加载失败: %{public}s', JSON.stringify(err));
                 return;
             }
-            hilog.info(DOMAIN, TAG, 'Content loaded successfully');
+            hilog.info(DOMAIN, TAG, '页面加载成功');
         });
+    }
+
+    /**
+     * 对应 Android: Activity.onDestroy()
+     * 功能: 释放资源
+     */
+    onDestroy(): void {
+        hilog.info(DOMAIN, TAG, 'onDestroy - 窗口关闭');
     }
 
     onWindowStageDestroy(): void {
@@ -55,32 +55,10 @@ export default class EntryAbility extends UIAbility {
     }
 
     onForeground(): void {
-        hilog.info(DOMAIN, TAG, 'onForeground');
-        // Maps to Android onStart + onResume
-        this.adapter.onStart();
-        this.adapter.onResume();
+        hilog.info(DOMAIN, TAG, 'onForeground - 进入前台');
     }
 
     onBackground(): void {
-        hilog.info(DOMAIN, TAG, 'onBackground');
-        // Maps to Android onPause + onStop
-        this.adapter.onPause();
-        this.adapter.onStop();
-    }
-
-    onSaveState(reason: AbilityConstant.StateType): AbilityConstant.OnSaveResult {
-        hilog.info(DOMAIN, TAG, 'onSaveState, reason: %{public}d', reason);
-        // Corresponds to Android onSaveInstanceState
-        this.adapter.onSaveInstanceState();
-        return AbilityConstant.OnSaveResult.ALL_AGREE;
-    }
-
-    // Expose counter operations for the UI
-    getCounter(): number {
-        return this.counter;
-    }
-
-    setCounter(value: number): void {
-        this.counter = value;
+        hilog.info(DOMAIN, TAG, 'onBackground - 进入后台');
     }
 }
