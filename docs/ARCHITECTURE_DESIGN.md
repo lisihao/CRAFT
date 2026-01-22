@@ -1,65 +1,62 @@
-# CRAFT 技术架构设计文档
+# CRAFT 架构设计文档
 
 > **CRAFT Runs Any Framework Technology**
-> 版本: 2.0.0 | 日期: 2026-01-20
+> 版本: 2.1.0 | 日期: 2026-01-21
 
-## 一、项目愿景与目标
+---
+
+## 一、项目概述
 
 ### 1.1 项目定位
 
-CRAFT 是一个 **AI 驱动的自动化 API 适配层生成系统**，旨在通过高度自动化的方式，大规模生成跨平台 API 转接代码（如 Android API 到 HarmonyOS API）。
+CRAFT 是一个 **AI 驱动的跨平台 API 适配层自动生成系统**，专注于将 Android 应用的 API 调用自动转换为 HarmonyOS 兼容代码。
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    CRAFT 核心价值                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   Android App  ───[CRAFT]───>  HarmonyOS App                   │
+│                                                                 │
+│   • 自动解析 Android API 调用                                   │
+│   • 智能映射到 HarmonyOS 等价 API                               │
+│   • 生成类型安全的适配器代码                                    │
+│   • 支持 Java/Kotlin → ArkTS 转换                               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### 1.2 核心目标
 
 | 目标 | 描述 | 衡量标准 |
 |------|------|---------|
-| **规模化** | 支持 30,000+ API 的自动分析与适配 | API 覆盖率 > 90% |
-| **自动化** | 最小化人工干预，AI 驱动的代码生成 | 人工介入率 < 10% |
-| **高质量** | 生成的代码符合生产标准 | 自动化测试通过率 > 95% |
-| **高性能** | 极低的运行时开销 | 性能损耗 < 5% |
-| **内存安全** | 零内存泄漏，零数据竞争 | Rust 编译时保证 |
+| **自动化** | AI 驱动的 API 映射与代码生成 | 人工介入 < 10% |
+| **准确性** | 语义正确的 API 转换 | 映射准确率 > 95% |
+| **高性能** | Rust 实现，零成本抽象 | 性能损耗 < 5% |
+| **内存安全** | 编译时内存安全保证 | 零内存泄漏 |
+| **可扩展** | 支持多平台适配 | 模块化架构 |
 
-### 1.3 设计原则
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      CRAFT 设计原则                               │
-├─────────────────────────────────────────────────────────────────┤
-│  1. AI First      - AI 是核心生产力，人是审核者                  │
-│  2. Safety First  - 内存安全、类型安全、并发安全                 │
-│  3. Spec Driven   - 基于形式化规格的代码生成                     │
-│  4. Zero Cost     - 零成本抽象，编译时优化                       │
-│  5. Verifiable    - 可验证、可测试、可追溯                       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### 1.4 为什么选择 Rust
+### 1.3 技术选型：为什么用 Rust
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Rust 技术优势                                  │
+│                      Rust 技术优势                               │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  🔒 内存安全                                                     │
-│  ├── 所有权系统在编译时防止内存泄漏                              │
-│  ├── 借用检查器防止悬垂指针和数据竞争                            │
-│  └── 无需垃圾回收，确定性内存管理                                │
+│  ├── 所有权系统：编译时防止内存泄漏                              │
+│  ├── 借用检查器：防止悬垂指针和数据竞争                          │
+│  └── 无需 GC：确定性内存管理                                     │
 │                                                                 │
 │  ⚡ 极致性能                                                     │
-│  ├── 零成本抽象，与 C/C++ 同级性能                               │
-│  ├── 无运行时开销，适合系统级代码                                │
-│  └── LLVM 后端，高度优化的机器码                                 │
+│  ├── 零成本抽象：与 C/C++ 同级性能                               │
+│  ├── tree-sitter 集成：增量解析，毫秒级响应                      │
+│  └── Rayon 并行：多核心充分利用                                  │
 │                                                                 │
 │  ✅ 可验证性                                                     │
-│  ├── 强类型系统在编译时捕获大量错误                              │
-│  ├── 模式匹配确保穷尽性检查                                      │
-│  ├── Result/Option 类型强制错误处理                              │
-│  └── 丰富的测试框架和文档测试                                    │
-│                                                                 │
-│  🔧 工具链                                                       │
-│  ├── Cargo: 优秀的包管理和构建系统                               │
-│  ├── rustfmt/clippy: 代码格式化和静态分析                        │
-│  └── 跨平台编译支持                                              │
+│  ├── 强类型：编译时捕获类型错误                                  │
+│  ├── Result/Option：强制错误处理                                 │
+│  └── 模式匹配：穷尽性检查                                        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -68,739 +65,703 @@ CRAFT 是一个 **AI 驱动的自动化 API 适配层生成系统**，旨在通�
 
 ## 二、系统总体架构
 
-### 2.1 架构概览
+### 2.1 分层架构
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                       CRAFT System Architecture (Rust)                   │
+│                       CRAFT System Architecture                          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                     Layer 1: Input Sources                       │    │
+│  │                   Layer 1: Input Sources                         │    │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │    │
-│  │  │ Android SDK  │  │ HarmonyOS SDK│  │ API Documentation    │   │    │
-│  │  │ Source Code  │  │ Source Code  │  │ (AOSP, OpenHarmony)  │   │    │
+│  │  │ Android SDK  │  │ HarmonyOS SDK│  │ User Applications    │   │    │
+│  │  │ (Java/Kotlin)│  │ (ArkTS)      │  │ (待转换应用)         │   │    │
 │  │  └──────────────┘  └──────────────┘  └──────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                    │                                     │
 │                                    ▼                                     │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                Layer 2: Analysis Engine (Rust)                   │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │    │
-│  │  │ tree-sitter  │  │ Semantic     │  │ Compatibility        │   │    │
-│  │  │ Parser       │  │ Analyzer     │  │ Matcher              │   │    │
-│  │  └──────────────┘  └──────────────┘  └──────────────────────┘   │    │
+│  │                Layer 2: Parser (craft-parser)                    │    │
+│  │  ┌──────────────────────────────────────────────────────────┐   │    │
+│  │  │  tree-sitter 增量解析                                      │   │    │
+│  │  │  ├── Java Parser      → AST → ApiSpec                     │   │    │
+│  │  │  ├── Kotlin Parser    → AST → ApiSpec                     │   │    │
+│  │  │  └── ArkTS Parser     → AST → ApiSpec                     │   │    │
+│  │  └──────────────────────────────────────────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                    │                                     │
 │                                    ▼                                     │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                Layer 3: Knowledge Base (Rust + SQLite)           │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │    │
-│  │  │ API Specs    │  │ Mapping      │  │ Pattern              │   │    │
-│  │  │ (serde)      │  │ Rules DB     │  │ Library              │   │    │
-│  │  └──────────────┘  └──────────────┘  └──────────────────────┘   │    │
+│  │                Layer 3: Analyzer (craft-analyzer)                │    │
+│  │  ┌──────────────────────────────────────────────────────────┐   │    │
+│  │  │  SemanticAnalyzer                                          │   │    │
+│  │  │  ├── calculate_similarity()    # 相似度计算               │   │    │
+│  │  │  ├── find_best_mapping()       # 最佳匹配查找             │   │    │
+│  │  │  └── generate_method_mappings()# 方法级映射生成           │   │    │
+│  │  └──────────────────────────────────────────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                    │                                     │
 │                                    ▼                                     │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │               Layer 4: AI Generation Engine (Rust)               │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │    │
-│  │  │ Claude API   │  │ Code         │  │ Template             │   │    │
-│  │  │ Client       │  │ Generator    │  │ Engine (Tera)        │   │    │
-│  │  └──────────────┘  └──────────────┘  └──────────────────────┘   │    │
+│  │               Layer 4: Generator (craft-generator)               │    │
+│  │  ┌──────────────────────────────────────────────────────────┐   │    │
+│  │  │  LifecycleMapping + AdapterGenerator                       │   │    │
+│  │  │  ├── activity_to_uiability()   # 生命周期映射             │   │    │
+│  │  │  ├── generate_java()           # Java 适配器生成          │   │    │
+│  │  │  ├── generate_kotlin()         # Kotlin 适配器生成        │   │    │
+│  │  │  └── generate_arkts()          # ArkTS 适配器生成         │   │    │
+│  │  └──────────────────────────────────────────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                    │                                     │
 │                                    ▼                                     │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                Layer 5: Quality Assurance (Rust)                 │    │
+│  │                     Layer 5: Output                              │    │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │    │
-│  │  │ Test         │  │ Validator    │  │ Benchmark            │   │    │
-│  │  │ Generator    │  │ Engine       │  │ Suite                │   │    │
-│  │  └──────────────┘  └──────────────┘  └──────────────────────┘   │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                    │                                     │
-│                                    ▼                                     │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                     Layer 6: Output Artifacts                    │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │    │
-│  │  │ Shim Layer   │  │ Native       │  │ Documentation        │   │    │
-│  │  │ Libraries    │  │ Bridges      │  │ & Reports            │   │    │
+│  │  │ Adapter Code │  │ Bridge Code  │  │ Documentation        │   │    │
+│  │  │ (.java/.ets) │  │ (Shim Layer) │  │ (API Mapping Report) │   │    │
 │  │  └──────────────┘  └──────────────┘  └──────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 数据流架构
+### 2.2 数据流
 
 ```
-Android API Spec                    HarmonyOS API Spec
-      │                                    │
-      ▼                                    ▼
-┌─────────────┐                    ┌─────────────┐
-│ tree-sitter │                    │ tree-sitter │
-│ Java Parser │                    │ ArkTS Parser│
-└──────┬──────┘                    └──────┬──────┘
-       │                                  │
-       ▼                                  ▼
-┌─────────────────────────────────────────────────┐
-│         Semantic Mapping Engine (Rust)           │
-│  ┌─────────────────────────────────────────┐    │
-│  │  Android API  ←──mapping──→ Harmony API  │    │
-│  │  Strongly typed with serde + validation  │    │
-│  └─────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────┘
-                      │
-                      ▼
-        ┌─────────────────────────┐
-        │   AI Code Generator     │
-        │   (reqwest + Claude)    │
-        └───────────┬─────────────┘
-                    │
-        ┌───────────┼───────────┐
-        ▼           ▼           ▼
-   ┌─────────┐ ┌─────────┐ ┌─────────┐
-   │ Adapter │ │ Bridge  │ │  Test   │
-   │  Code   │ │  Code   │ │  Code   │
-   └─────────┘ └─────────┘ └─────────┘
+┌────────────────┐          ┌────────────────┐          ┌────────────────┐
+│  MainActivity  │          │   ApiSpec      │          │ MappingRule    │
+│  .java         │────▶     │  (Rust Struct) │────▶     │ (Rust Struct)  │
+│                │  parse   │                │  analyze │                │
+└────────────────┘          └────────────────┘          └────────────────┘
+                                                               │
+                                                               ▼ generate
+                            ┌────────────────────────────────────────────┐
+                            │                                            │
+                 ┌──────────┴──────────┐   ┌──────────┴──────────┐      │
+                 │  ActivityAdapter    │   │  Index.ets          │      │
+                 │  .java              │   │  (ArkUI Page)       │      │
+                 └─────────────────────┘   └─────────────────────┘      │
 ```
 
 ---
 
 ## 三、核心组件详细设计
 
-### 3.1 API 分析引擎 (Analysis Engine)
+### 3.1 核心数据结构 (craft-core)
 
-#### 3.1.1 功能职责
-
-```rust
-/// API 分析引擎
-/// 负责解析和分析 SDK 源码，提取 API 规格
-pub struct ApiAnalyzer {
-    java_parser: TreeSitterParser,
-    arkts_parser: TreeSitterParser,
-    semantic_engine: SemanticEngine,
-}
-
-impl ApiAnalyzer {
-    /// 解析 SDK 源码，提取所有公开 API
-    pub fn parse_sdk(&self, sdk_path: &Path) -> Result<ApiRepository, AnalyzerError> {
-        let files = self.discover_source_files(sdk_path)?;
-        let apis = files
-            .par_iter()  // 使用 rayon 并行处理
-            .map(|file| self.parse_file(file))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(ApiRepository::from_specs(apis))
-    }
-
-    /// 使用 AI 分析 API 的语义含义
-    pub async fn analyze_semantics(&self, api: &ApiSpec) -> Result<SemanticInfo, AnalyzerError> {
-        self.semantic_engine.analyze(api).await
-    }
-
-    /// 构建 API 依赖关系图
-    pub fn build_dependency_graph(&self, apis: &[ApiSpec]) -> DependencyGraph {
-        DependencyGraph::build_from(apis)
-    }
-}
-```
-
-#### 3.1.2 API 规格定义 (Type-Safe)
+#### 3.1.1 API 规格定义
 
 ```rust
-use serde::{Deserialize, Serialize};
+// crates/craft-core/src/lib.rs
 
-/// API 规格定义 - 强类型、可序列化
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ApiSpec {
-    pub platform: Platform,
-    pub version: String,
-    pub package: String,
-    pub class_name: String,
-    pub methods: Vec<MethodSpec>,
-    pub fields: Vec<FieldSpec>,
-    #[serde(default)]
-    pub annotations: Vec<String>,
-    #[serde(default)]
-    pub semantic_tags: Vec<SemanticTag>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MethodSpec {
-    pub name: String,
-    pub signature: String,
-    pub params: Vec<ParamSpec>,
-    pub return_type: TypeSpec,
-    pub throws: Vec<String>,
-    pub visibility: Visibility,
-    #[serde(default)]
-    pub is_static: bool,
-    #[serde(default)]
-    pub is_deprecated: bool,
-    pub since: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ParamSpec {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub param_type: TypeSpec,
-    #[serde(default)]
-    pub nullable: bool,
-    pub description: Option<String>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+/// 支持的平台
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Platform {
     Android,
     Harmony,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum Visibility {
-    Public,
-    Protected,
-    Private,
-    Package,
+/// API 规格定义
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiSpec {
+    pub id: Uuid,
+    pub platform: Platform,
+    pub version: String,
+    pub package: String,
+    pub class_name: String,
+    pub full_qualified_name: String,
+    pub class_type: String,            // class, interface, abstract
+    pub parent_class: Option<String>,
+    pub interfaces: Vec<String>,
+    pub methods: Vec<MethodSpec>,
+    pub semantic_tags: Vec<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+/// 方法规格
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MethodSpec {
+    pub name: String,
+    pub signature: String,
+    pub return_type: String,
+    pub parameters: Vec<ParameterSpec>,
+    pub modifiers: Vec<String>,        // public, static, etc.
+    pub semantic_tags: Vec<String>,
+    pub doc_comment: Option<String>,
+}
+
+/// 参数规格
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParameterSpec {
+    pub name: String,
+    pub param_type: String,
+    pub nullable: bool,
+    pub default_value: Option<String>,
 }
 ```
 
-#### 3.1.3 使用 tree-sitter 进行高性能解析
+#### 3.1.2 映射规则定义
 
 ```rust
-use tree_sitter::{Parser, Language};
-
-pub struct TreeSitterParser {
-    parser: Parser,
-    language: Language,
+/// 映射类型
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum MappingType {
+    Direct,    // 直接 1:1 映射 (相似度 > 90%)
+    Semantic,  // 语义映射 (相似度 70-90%)
+    Bridge,    // 桥接映射 (需要额外代码)
+    Shim,      // 垫片层 (完全模拟)
 }
 
-impl TreeSitterParser {
-    pub fn new_java() -> Result<Self, ParserError> {
-        let mut parser = Parser::new();
-        let language = tree_sitter_java::language();
-        parser.set_language(language)?;
-        Ok(Self { parser, language })
-    }
-
-    pub fn parse_file(&mut self, source: &str) -> Result<ParsedAst, ParserError> {
-        let tree = self.parser
-            .parse(source, None)
-            .ok_or(ParserError::ParseFailed)?;
-
-        let root = tree.root_node();
-        self.extract_api_specs(root, source)
-    }
-
-    fn extract_api_specs(&self, node: tree_sitter::Node, source: &str) -> Result<ParsedAst, ParserError> {
-        // 递归遍历 AST，提取类、方法、字段定义
-        // ...
-    }
-}
-```
-
-### 3.2 语义映射引擎 (Semantic Mapping Engine)
-
-#### 3.2.1 映射规则定义
-
-```rust
-/// 映射规则 - 强类型定义
+/// API 映射规则
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MappingRule {
-    pub id: String,
-    pub source: ApiReference,
-    pub target: ApiReference,
+    pub id: Uuid,
+    pub source: ApiReference,          // 源 API (Android)
+    pub target: ApiReference,          // 目标 API (HarmonyOS)
     pub mapping_type: MappingType,
-    pub confidence: f64,
-    pub transformations: Vec<Transformation>,
-    #[serde(default)]
-    pub requires_bridge: bool,
-    pub notes: Option<String>,
+    pub confidence: f64,               // 置信度 0.0 - 1.0
+    pub method_mappings: Vec<MethodMapping>,
+    pub requires_imports: Vec<String>,
+    pub bridge_code: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum MappingType {
-    /// 1:1 直接映射
-    Direct,
-    /// 语义等价映射
-    Semantic,
-    /// 需要参数转换
-    Transform,
-    /// 需要桥接代码
-    Bridge,
-    /// 需要模拟实现
-    Shim,
-    /// 无法映射
-    Unsupported,
-}
-
+/// 方法级映射
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Transformation {
-    pub kind: TransformKind,
-    pub source_param: Option<String>,
-    pub target_param: Option<String>,
-    pub expression: Option<String>,
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum TransformKind {
-    TypeConversion,
-    ParameterReorder,
-    ParameterMerge,
-    ParameterSplit,
-    DefaultValue,
-    CustomCode,
+pub struct MethodMapping {
+    pub source_method: String,         // 源方法名
+    pub target_method: String,         // 目标方法名
+    pub param_mappings: Vec<(String, String)>,  // 参数映射
+    pub pre_call_code: Option<String>, // 调用前代码
+    pub post_call_code: Option<String>,// 调用后代码
 }
 ```
 
-#### 3.2.2 映射引擎实现
+### 3.2 语义分析器 (craft-analyzer)
+
+#### 3.2.1 SemanticAnalyzer 核心实现
 
 ```rust
-pub struct MappingEngine {
-    rules: RwLock<HashMap<String, MappingRule>>,
-    ai_client: Arc<ClaudeClient>,
+// crates/craft-analyzer/src/lib.rs
+
+/// 语义分析器
+pub struct SemanticAnalyzer {
+    min_confidence: f64,  // 最小置信度阈值 (默认 0.7)
 }
 
-impl MappingEngine {
-    /// 查找最佳映射
-    pub async fn find_mapping(
+impl SemanticAnalyzer {
+    /// 分析源 API 与目标 API，生成映射规则
+    pub fn analyze(
         &self,
-        source_api: &ApiSpec,
+        source_apis: &[ApiSpec],
         target_apis: &[ApiSpec],
-    ) -> Result<Option<MappingRule>, MappingError> {
-        // 1. 先检查已知规则
-        if let Some(rule) = self.find_known_mapping(source_api) {
-            return Ok(Some(rule));
-        }
-
-        // 2. 尝试名称相似度匹配
-        if let Some(rule) = self.find_by_similarity(source_api, target_apis) {
-            if rule.confidence > 0.8 {
-                return Ok(Some(rule));
-            }
-        }
-
-        // 3. 使用 AI 进行语义匹配
-        self.ai_semantic_match(source_api, target_apis).await
-    }
-
-    /// 批量映射 - 使用 rayon 并行处理
-    pub async fn batch_map(
-        &self,
-        sources: &[ApiSpec],
-        targets: &[ApiSpec],
-    ) -> Vec<Result<MappingRule, MappingError>> {
-        // 对于简单映射使用并行处理
-        let (simple, complex): (Vec<_>, Vec<_>) = sources
-            .iter()
-            .partition(|api| self.is_simple_mapping(api));
-
-        let simple_results: Vec<_> = simple
+    ) -> Result<Vec<MappingRule>, CraftError> {
+        // 使用 Rayon 并行处理
+        let mappings: Vec<MappingRule> = source_apis
             .par_iter()
-            .map(|api| self.find_known_mapping(api).ok_or(MappingError::NotFound))
+            .filter_map(|source| self.find_best_mapping(source, target_apis))
             .collect();
 
-        // 对于复杂映射使用 AI（带速率限制）
-        let complex_results = self.batch_ai_map(&complex, targets).await;
-
-        // 合并结果
-        [simple_results, complex_results].concat()
+        Ok(mappings)
     }
-}
-```
 
-### 3.3 AI 代码生成引擎
+    /// 计算两个 API 的相似度
+    fn calculate_similarity(&self, source: &ApiSpec, target: &ApiSpec) -> f64 {
+        let mut score = 0.0;
 
-#### 3.3.1 Claude API 客户端
+        // 类名相似度 (权重 30%)
+        let name_sim = self.string_similarity(&source.class_name, &target.class_name);
+        score += name_sim * 0.3;
 
-```rust
-use reqwest::Client;
-use serde_json::json;
+        // 语义标签重叠 (权重 30%)
+        let tag_sim = self.tag_similarity(&source.semantic_tags, &target.semantic_tags);
+        score += tag_sim * 0.3;
 
-pub struct ClaudeClient {
-    client: Client,
-    api_key: String,
-    model: String,
-    rate_limiter: RateLimiter,
-}
+        // 方法重叠 (权重 40%)
+        let method_sim = self.method_similarity(&source.methods, &target.methods);
+        score += method_sim * 0.4;
 
-impl ClaudeClient {
-    pub fn new(api_key: String) -> Self {
-        Self {
-            client: Client::new(),
-            api_key,
-            model: "claude-opus-4-5-20251101".to_string(),
-            rate_limiter: RateLimiter::new(50), // 50 RPM
+        score
+    }
+
+    /// 确定映射类型
+    fn determine_mapping_type(&self, source: &ApiSpec, target: &ApiSpec) -> MappingType {
+        let similarity = self.calculate_similarity(source, target);
+
+        if similarity > 0.9 {
+            MappingType::Direct      // 直接映射
+        } else if similarity > 0.7 {
+            MappingType::Semantic    // 语义映射
+        } else {
+            MappingType::Bridge      // 桥接映射
         }
     }
+}
+```
 
-    pub async fn generate_adapter(
-        &self,
-        context: &AdapterContext,
-    ) -> Result<GeneratedCode, AiError> {
-        self.rate_limiter.acquire().await;
+### 3.3 代码生成器 (craft-generator)
 
-        let prompt = self.build_adapter_prompt(context);
+#### 3.3.1 生命周期映射
 
-        let response = self.client
-            .post("https://api.anthropic.com/v1/messages")
-            .header("x-api-key", &self.api_key)
-            .header("anthropic-version", "2023-06-01")
-            .json(&json!({
-                "model": self.model,
-                "max_tokens": 4096,
-                "messages": [{"role": "user", "content": prompt}]
-            }))
-            .send()
-            .await?;
+这是 CRAFT 最核心的组件之一，负责将 Android Activity 生命周期映射到 HarmonyOS UIAbility。
 
-        let result: ApiResponse = response.json().await?;
-        self.parse_generated_code(&result)
+```rust
+// crates/craft-generator/src/lib.rs
+
+/// 生命周期目标
+pub struct LifecycleTarget {
+    pub method: String,                  // 目标方法名
+    pub pre_call: Option<String>,        // 调用前代码
+    pub post_call: Option<String>,       // 调用后代码
+    pub param_transform: Option<String>, // 参数转换
+}
+
+/// 生命周期映射器
+pub struct LifecycleMapping {
+    mappings: HashMap<String, LifecycleTarget>,
+}
+
+impl LifecycleMapping {
+    /// 创建 Activity -> UIAbility 生命周期映射
+    pub fn activity_to_uiability() -> Self {
+        let mut mappings = HashMap::new();
+
+        // onCreate -> onCreate (参数 Bundle -> Want)
+        mappings.insert("onCreate".to_string(), LifecycleTarget {
+            method: "onCreate".to_string(),
+            pre_call: Some("// Bundle to Want transformation".to_string()),
+            post_call: None,
+            param_transform: Some("want".to_string()),
+        });
+
+        // onStart -> onForeground
+        mappings.insert("onStart".to_string(), LifecycleTarget {
+            method: "onForeground".to_string(),
+            pre_call: None,
+            post_call: None,
+            param_transform: None,
+        });
+
+        // onResume -> onForeground (合并)
+        mappings.insert("onResume".to_string(), LifecycleTarget {
+            method: "onForeground".to_string(),
+            pre_call: Some("// Note: onResume maps to onForeground".to_string()),
+            ..Default::default()
+        });
+
+        // onPause -> onBackground
+        mappings.insert("onPause".to_string(), LifecycleTarget {
+            method: "onBackground".to_string(),
+            ..Default::default()
+        });
+
+        // onStop -> onBackground (合并)
+        mappings.insert("onStop".to_string(), LifecycleTarget {
+            method: "onBackground".to_string(),
+            ..Default::default()
+        });
+
+        // onDestroy -> onDestroy
+        mappings.insert("onDestroy".to_string(), LifecycleTarget {
+            method: "onDestroy".to_string(),
+            ..Default::default()
+        });
+
+        Self { mappings }
+    }
+
+    /// 获取目标方法
+    pub fn get_target(&self, source_method: &str) -> Option<&LifecycleTarget> {
+        self.mappings.get(source_method)
+    }
+
+    /// 检查是否为生命周期方法
+    pub fn is_lifecycle_method(&self, method_name: &str) -> bool {
+        self.mappings.contains_key(method_name)
     }
 }
 ```
 
-#### 3.3.2 代码生成器
+#### 3.3.2 AdapterGenerator 代码生成
 
 ```rust
-use tera::{Tera, Context};
-
-pub struct CodeGenerator {
-    templates: Tera,
-    ai_client: Arc<ClaudeClient>,
+/// 适配器代码生成器
+pub struct AdapterGenerator {
+    tera: Option<Tera>,                    // 模板引擎
+    version: String,                       // 生成器版本
+    lifecycle_mapping: LifecycleMapping,   // 生命周期映射
 }
 
-impl CodeGenerator {
-    pub fn new(template_dir: &Path) -> Result<Self, GeneratorError> {
-        let templates = Tera::new(
-            template_dir.join("**/*.tera").to_str().unwrap()
-        )?;
-
-        Ok(Self {
-            templates,
-            ai_client: Arc::new(ClaudeClient::new(
-                std::env::var("ANTHROPIC_API_KEY")?
-            )),
-        })
-    }
-
+impl AdapterGenerator {
     /// 生成适配器代码
-    pub async fn generate(
+    pub fn generate(
         &self,
-        mapping: &MappingRule,
+        mapping_rule: &MappingRule,
         source_api: &ApiSpec,
         target_api: &ApiSpec,
-    ) -> Result<GeneratedAdapter, GeneratorError> {
-        match mapping.mapping_type {
-            MappingType::Direct => self.generate_direct_adapter(mapping, source_api, target_api),
-            MappingType::Semantic | MappingType::Transform => {
-                self.generate_transform_adapter(mapping, source_api, target_api)
-            }
-            MappingType::Bridge | MappingType::Shim => {
-                self.generate_with_ai(mapping, source_api, target_api).await
-            }
-            MappingType::Unsupported => Err(GeneratorError::Unsupported),
+        output_format: &str,
+    ) -> Result<String, CraftError> {
+        match output_format {
+            "java"   => self.generate_java(mapping_rule, source_api, target_api),
+            "kotlin" => self.generate_kotlin(mapping_rule, source_api, target_api),
+            "arkts"  => self.generate_arkts(mapping_rule, source_api, target_api),
+            _ => Err(CraftError::Generation("Unsupported format".into())),
         }
     }
 
-    fn generate_direct_adapter(
-        &self,
-        mapping: &MappingRule,
-        source: &ApiSpec,
-        target: &ApiSpec,
-    ) -> Result<GeneratedAdapter, GeneratorError> {
-        let mut context = Context::new();
-        context.insert("source", source);
-        context.insert("target", target);
-        context.insert("mapping", mapping);
-        context.insert("timestamp", &chrono::Utc::now().to_rfc3339());
-
-        let code = self.templates.render("adapter_java.tera", &context)?;
-
-        Ok(GeneratedAdapter {
-            code,
-            confidence: mapping.confidence,
-            requires_review: mapping.confidence < 0.9,
-        })
-    }
-}
-```
-
-### 3.4 测试生成框架
-
-```rust
-pub struct TestGenerator {
-    templates: Tera,
-}
-
-impl TestGenerator {
-    /// 生成单元测试
-    pub fn generate_unit_tests(
-        &self,
-        adapter: &GeneratedAdapter,
-        source_api: &ApiSpec,
-    ) -> Result<GeneratedTests, TestGenError> {
-        let test_cases: Vec<TestCase> = source_api
-            .methods
-            .iter()
-            .flat_map(|method| self.generate_method_tests(method))
-            .collect();
-
-        let mut context = Context::new();
-        context.insert("adapter", adapter);
-        context.insert("test_cases", &test_cases);
-
-        let code = self.templates.render("test_java.tera", &context)?;
-
-        Ok(GeneratedTests { code, test_cases })
-    }
-
-    fn generate_method_tests(&self, method: &MethodSpec) -> Vec<TestCase> {
-        let mut tests = vec![
-            // 基本功能测试
-            TestCase::new(&format!("test_{}_basic", method.name)),
-        ];
-
-        // 参数边界测试
-        for param in &method.params {
-            if param.nullable {
-                tests.push(TestCase::new(&format!(
-                    "test_{}_{}_null",
-                    method.name, param.name
-                )));
+    /// Java 类型 -> TypeScript 类型转换
+    fn java_to_ts_type(&self, java_type: &str) -> String {
+        match java_type {
+            "void" => "void".to_string(),
+            "int" | "long" | "float" | "double" => "number".to_string(),
+            "boolean" | "Boolean" => "boolean".to_string(),
+            "String" => "string".to_string(),
+            "Object" => "any".to_string(),
+            other if other.starts_with("List<") => {
+                let inner = &other[5..other.len()-1];
+                format!("{}[]", self.java_to_ts_type(inner))
             }
+            other => other.to_string(),
         }
+    }
 
-        // 异常测试
-        for exception in &method.throws {
-            tests.push(TestCase::new(&format!(
-                "test_{}_throws_{}",
-                method.name,
-                exception.split('.').last().unwrap_or(exception)
-            )));
+    /// Java 类型 -> Kotlin 类型转换
+    fn java_to_kotlin_type(&self, java_type: &str) -> String {
+        match java_type {
+            "void" => "Unit".to_string(),
+            "int" => "Int".to_string(),
+            "boolean" => "Boolean".to_string(),
+            other => other.to_string(),
         }
-
-        tests
     }
 }
 ```
 
 ---
 
-## 四、并发与性能设计
+## 四、API 映射流程
 
-### 4.1 并发模型
+### 4.1 完整映射流程
 
-```rust
-use tokio::sync::{Semaphore, RwLock};
-use rayon::prelude::*;
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         API 映射完整流程                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Step 1: 解析源代码                                                      │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │  MainActivity.java  ───[tree-sitter]───>  ApiSpec {              │   │
+│  │                                             platform: Android,   │   │
+│  │                                             class_name: "MainActivity",│
+│  │                                             methods: [onCreate, ...]│   │
+│  │                                           }                       │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                     │                                    │
+│                                     ▼                                    │
+│  Step 2: 语义分析                                                        │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │  SemanticAnalyzer.analyze()                                       │   │
+│  │  ├── calculate_similarity(Activity, UIAbility) = 0.85             │   │
+│  │  ├── determine_mapping_type() = Semantic                          │   │
+│  │  └── generate_method_mappings()                                   │   │
+│  │        ├── onCreate -> onCreate                                   │   │
+│  │        ├── finish -> terminateSelf                                │   │
+│  │        └── onDestroy -> onDestroy                                 │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                     │                                    │
+│                                     ▼                                    │
+│  Step 3: 生命周期映射                                                    │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │  LifecycleMapping.activity_to_uiability()                         │   │
+│  │                                                                   │   │
+│  │  ┌─────────────────────┬────────────────────────────────────┐    │   │
+│  │  │ Android Activity    │ HarmonyOS UIAbility                 │    │   │
+│  │  ├─────────────────────┼────────────────────────────────────┤    │   │
+│  │  │ onCreate(Bundle)    │ onCreate(Want, LaunchParam)        │    │   │
+│  │  │ onStart()           │ onForeground()                     │    │   │
+│  │  │ onResume()          │ onForeground()                     │    │   │
+│  │  │ onPause()           │ onBackground()                     │    │   │
+│  │  │ onStop()            │ onBackground()                     │    │   │
+│  │  │ onDestroy()         │ onDestroy()                        │    │   │
+│  │  │ finish()            │ terminateSelf()                    │    │   │
+│  │  └─────────────────────┴────────────────────────────────────┘    │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                     │                                    │
+│                                     ▼                                    │
+│  Step 4: 代码生成                                                        │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │  AdapterGenerator.generate()                                      │   │
+│  │  ├── generate_java()   → ActivityAdapter.java                     │   │
+│  │  ├── generate_kotlin() → ActivityAdapter.kt                       │   │
+│  │  └── generate_arkts()  → Index.ets (ArkUI Page)                   │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-pub struct BatchProcessor {
-    /// CPU 密集型任务使用 rayon 线程池
-    cpu_pool: rayon::ThreadPool,
-    /// IO 密集型任务使用 tokio
-    io_semaphore: Semaphore,
-    /// AI API 速率限制
-    ai_rate_limiter: RateLimiter,
-}
+### 4.2 核心 API 映射表
 
-impl BatchProcessor {
-    pub async fn process_batch(
-        &self,
-        apis: Vec<ApiSpec>,
-    ) -> Vec<Result<GeneratedAdapter, ProcessError>> {
-        // 分类: CPU 密集型 vs IO 密集型
-        let (cpu_bound, io_bound): (Vec<_>, Vec<_>) = apis
-            .into_iter()
-            .partition(|api| self.is_cpu_bound(api));
+| Android API | HarmonyOS API | 映射类型 | Rust 函数 |
+|-------------|---------------|----------|-----------|
+| `Activity.onCreate(Bundle)` | `UIAbility.onCreate(Want, LaunchParam)` | Semantic | `LifecycleMapping.get_target()` |
+| `Activity.finish()` | `UIAbilityContext.terminateSelf()` | Bridge | `generate_java_delegation_method()` |
+| `Activity.onDestroy()` | `UIAbility.onDestroy()` | Direct | `LifecycleMapping.get_target()` |
+| `Activity.setContentView(int)` | `windowStage.loadContent(string)` | Transform | `generate_type_conversion()` |
+| `View.setOnClickListener()` | `Button.onClick()` | Semantic | `generate_arkts_method_implementations()` |
+| `TextView` | `Text()` | Direct | - |
+| `Button` | `Button()` | Direct | - |
 
-        // CPU 密集型: 使用 rayon 并行处理
-        let cpu_results: Vec<_> = cpu_bound
-            .par_iter()
-            .map(|api| self.process_cpu_bound(api))
-            .collect();
+---
 
-        // IO 密集型: 使用 tokio 异步处理
-        let io_results = futures::future::join_all(
-            io_bound.iter().map(|api| self.process_io_bound(api))
-        ).await;
+## 五、实际示例：Hello World 应用
 
-        [cpu_results, io_results].concat()
+### 5.1 源代码 (Android)
+
+```java
+// android/app/src/main/java/com/example/counter/MainActivity.java
+package com.example.counter;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.widget.Button;
+
+public class MainActivity extends Activity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button closeButton = findViewById(R.id.btn_close);
+        closeButton.setOnClickListener(v -> finish());
     }
-}
 
-/// 速率限制器 - 令牌桶算法
-pub struct RateLimiter {
-    tokens: AtomicU32,
-    max_tokens: u32,
-    refill_interval: Duration,
-}
-
-impl RateLimiter {
-    pub async fn acquire(&self) {
-        loop {
-            let current = self.tokens.load(Ordering::Relaxed);
-            if current > 0 {
-                if self.tokens
-                    .compare_exchange(current, current - 1, Ordering::SeqCst, Ordering::Relaxed)
-                    .is_ok()
-                {
-                    return;
-                }
-            }
-            tokio::time::sleep(Duration::from_millis(100)).await;
-        }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        System.out.println("MainActivity: Window closed");
     }
 }
 ```
 
-### 4.2 内存管理
+### 5.2 生成代码 (HarmonyOS)
 
-```rust
-/// 使用 Arena 分配器优化大量小对象分配
-use bumpalo::Bump;
+#### 5.2.1 UIAbility
 
-pub struct ParsingContext<'a> {
-    arena: &'a Bump,
-    source: &'a str,
-}
+```typescript
+// harmony/entry/src/main/ets/EntryAbility.ets
+import { UIAbility, AbilityConstant, Want } from '@kit.AbilityKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { window } from '@kit.ArkUI';
 
-impl<'a> ParsingContext<'a> {
-    /// 在 Arena 中分配字符串，避免频繁堆分配
-    pub fn intern_string(&self, s: &str) -> &'a str {
-        self.arena.alloc_str(s)
+export default class EntryAbility extends UIAbility {
+
+    /**
+     * 对应 Android: Activity.onCreate(Bundle)
+     */
+    onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+        hilog.info(0x0000, 'EntryAbility', 'onCreate - 窗口创建');
+    }
+
+    /**
+     * 对应 Android: Activity.setContentView()
+     */
+    onWindowStageCreate(windowStage: window.WindowStage): void {
+        windowStage.loadContent('pages/Index', (err) => {
+            if (err.code) {
+                hilog.error(0x0000, 'EntryAbility', '页面加载失败');
+                return;
+            }
+        });
+    }
+
+    /**
+     * 对应 Android: Activity.onDestroy()
+     */
+    onDestroy(): void {
+        hilog.info(0x0000, 'EntryAbility', 'onDestroy - 窗口关闭');
     }
 }
+```
 
-/// 使用 Cow 避免不必要的克隆
-use std::borrow::Cow;
+#### 5.2.2 ArkUI 页面
 
-pub struct ApiReference<'a> {
-    pub package: Cow<'a, str>,
-    pub class: Cow<'a, str>,
-    pub method: Option<Cow<'a, str>>,
+```typescript
+// harmony/entry/src/main/ets/pages/Index.ets
+import { common } from '@kit.AbilityKit';
+
+@Entry
+@Component
+struct Index {
+    private context = getContext(this) as common.UIAbilityContext;
+
+    build() {
+        Column() {
+            // 对应 Android TextView
+            Text('Hello World')
+                .fontSize(32)
+                .fontWeight(FontWeight.Bold)
+                .margin({ bottom: 48 })
+
+            // 对应 Android Button + setOnClickListener
+            Button('关闭窗口')
+                .width(200)
+                .height(60)
+                .onClick(() => {
+                    this.closeWindow();
+                })
+        }
+        .width('100%')
+        .height('100%')
+        .justifyContent(FlexAlign.Center)
+    }
+
+    /**
+     * 对应 Android: Activity.finish()
+     * 映射为: UIAbilityContext.terminateSelf()
+     */
+    closeWindow(): void {
+        this.context.terminateSelf();
+    }
+}
+```
+
+#### 5.2.3 适配器层
+
+```typescript
+// harmony/entry/src/main/ets/adapters/MainActivityAdapter.ets
+import { common } from '@kit.AbilityKit';
+
+/**
+ * CRAFT 自动生成 - Android API 适配器
+ * 提供 Android Activity API 兼容层
+ */
+export class MainActivityAdapter {
+    private context: common.UIAbilityContext;
+
+    constructor(context: common.UIAbilityContext) {
+        this.context = context;
+    }
+
+    /**
+     * 对应 Android: Activity.finish()
+     * 映射为: UIAbilityContext.terminateSelf()
+     */
+    finish(): void {
+        this.context.terminateSelf();
+    }
+
+    onCreate(): void {
+        // Lifecycle handled by UIAbility
+    }
+
+    onDestroy(): void {
+        // Lifecycle handled by UIAbility
+    }
 }
 ```
 
 ---
 
-## 五、项目目录结构
+## 六、项目目录结构
 
 ```
 CRAFT/
-├── Cargo.toml                      # 工作空间配置
+├── Cargo.toml                      # Workspace 配置
 ├── Cargo.lock                      # 依赖锁定
 ├── README.md                       # 项目说明
 ├── CLAUDE.md                       # Claude Code 开发规范
 │
-├── crates/                         # Rust crates
+├── crates/                         # Rust Crates
 │   ├── craft-core/                 # 核心数据结构
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── api_spec.rs         # API 规格定义
-│   │       ├── mapping.rs          # 映射规则定义
-│   │       └── error.rs            # 错误类型
+│   │       ├── lib.rs              # ApiSpec, MappingRule, ...
+│   │       └── error.rs            # CraftError
 │   │
-│   ├── craft-parser/               # SDK 解析器
+│   ├── craft-parser/               # 代码解析器
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── java.rs             # Java/Kotlin 解析
-│   │       ├── arkts.rs            # ArkTS 解析
-│   │       └── tree_sitter.rs      # tree-sitter 集成
+│   │       ├── lib.rs              # JavaParser, ArkTSParser
+│   │       ├── java.rs             # Java 解析
+│   │       └── arkts.rs            # ArkTS 解析
 │   │
 │   ├── craft-analyzer/             # 语义分析器
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── semantic.rs         # 语义分析
-│   │       └── matcher.rs          # 匹配算法
+│   │       └── lib.rs              # SemanticAnalyzer
 │   │
 │   ├── craft-generator/            # 代码生成器
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── adapter.rs          # 适配器生成
-│   │       ├── test.rs             # 测试生成
-│   │       └── template.rs         # 模板引擎
+│   │       └── lib.rs              # LifecycleMapping, AdapterGenerator
 │   │
 │   ├── craft-ai/                   # AI 集成
-│   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── claude.rs           # Claude API 客户端
-│   │       └── prompt.rs           # 提示词管理
+│   │       └── lib.rs              # ClaudeClient
 │   │
 │   ├── craft-pipeline/             # 自动化流水线
-│   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── lib.rs
-│   │       ├── orchestrator.rs     # 流程编排
-│   │       ├── batch.rs            # 批量处理
-│   │       └── incremental.rs      # 增量更新
+│   │       └── lib.rs              # BatchProcessor
 │   │
 │   └── craft-cli/                  # 命令行工具
-│       ├── Cargo.toml
 │       └── src/
-│           └── main.rs
+│           └── main.rs             # CLI 入口
 │
 ├── docs/                           # 设计文档
 │   ├── ARCHITECTURE_DESIGN.md      # 本文档
+│   ├── COUNTER_APP_DESIGN.md       # Hello World 示例设计
 │   ├── FEASIBILITY_ANALYSIS.md     # 可行性分析
-│   └── API_MAPPING_SPEC.md         # API 映射规格
+│   └── CODE_RUNNABLE_ANALYSIS.md   # 代码可运行性分析
+│
+├── examples/                       # 示例应用
+│   └── counter-app/                # Hello World 示例
+│       ├── android/                # Android 源码
+│       │   └── app/src/main/
+│       │       ├── java/           # Java 代码
+│       │       └── res/            # 资源文件
+│       ├── harmony/                # HarmonyOS 生成代码
+│       │   └── entry/src/main/ets/
+│       │       ├── EntryAbility.ets
+│       │       ├── pages/Index.ets
+│       │       └── adapters/
+│       ├── craft_generate.py       # Python 生成脚本
+│       └── verify_code.py          # 代码验证脚本
 │
 ├── templates/                      # 代码模板 (Tera)
 │   ├── adapter_java.tera
 │   ├── adapter_kotlin.tera
-│   ├── test_java.tera
-│   └── prompts/                    # AI 提示词
+│   └── prompts/
 │       └── generate_adapter.md
 │
-├── specs/                          # API 规格 (YAML/JSON)
+├── specs/                          # API 规格 (YAML)
 │   ├── android/
 │   └── harmony/
 │
-├── configs/                        # 配置文件
-│   ├── craft_config.toml           # 主配置
-│   └── mapping_rules.yaml          # 映射规则
-│
-├── tests/                          # 集成测试
-│   ├── integration/
-│   └── fixtures/
-│
-└── output/                         # 输出产物
-    ├── adapters/
-    ├── reports/
-    └── benchmarks/
+└── configs/                        # 配置文件
+    └── craft_config.toml
 ```
 
 ---
 
-## 六、关键技术选型
+## 七、技术栈
 
-### 6.1 技术栈
+| 层次 | 技术 | 用途 |
+|------|------|------|
+| **语言** | Rust 1.75+ | 内存安全、高性能 |
+| **异步** | Tokio | 异步 IO 处理 |
+| **并行** | Rayon | CPU 密集型并行计算 |
+| **解析** | tree-sitter | 增量代码解析 |
+| **序列化** | serde | JSON/YAML 序列化 |
+| **模板** | Tera | 代码模板生成 |
+| **HTTP** | reqwest | Claude API 调用 |
+| **CLI** | clap | 命令行解析 |
+| **日志** | tracing | 结构化日志 |
+| **错误** | thiserror | 错误类型定义 |
 
-| 层次 | 技术选型 | 理由 |
-|------|---------|------|
-| **语言** | Rust 1.75+ | 内存安全、高性能、可验证性 |
-| **异步运行时** | Tokio | 高性能异步 IO |
-| **并行计算** | Rayon | 数据并行处理 |
-| **解析器** | tree-sitter | 增量解析、多语言支持 |
-| **序列化** | serde + serde_json/yaml | 高性能、类型安全 |
-| **模板引擎** | Tera | Jinja2 兼容、Rust 原生 |
-| **HTTP 客户端** | reqwest | 异步、连接池 |
-| **数据库** | SQLite (rusqlite) | 轻量级、嵌入式 |
-| **CLI** | clap | 声明式命令行解析 |
-| **日志** | tracing | 结构化日志、性能分析 |
-| **错误处理** | thiserror + anyhow | 类型安全的错误处理 |
-
-### 6.2 Cargo.toml 工作空间配置
+### 7.1 Cargo.toml 工作空间配置
 
 ```toml
 [workspace]
@@ -815,175 +776,81 @@ members = [
     "crates/craft-cli",
 ]
 
-[workspace.package]
-version = "0.1.0"
-edition = "2021"
-rust-version = "1.75"
-license = "Apache-2.0"
-repository = "https://github.com/lisihao/CRAFT"
-
 [workspace.dependencies]
-# 异步运行时
 tokio = { version = "1.35", features = ["full"] }
-futures = "0.3"
-
-# 并行计算
 rayon = "1.8"
-
-# 序列化
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.9"
-toml = "0.8"
-
-# 解析
 tree-sitter = "0.20"
 tree-sitter-java = "0.20"
-
-# 模板
 tera = "1.19"
-
-# HTTP
 reqwest = { version = "0.11", features = ["json"] }
-
-# 数据库
-rusqlite = { version = "0.30", features = ["bundled"] }
-
-# CLI
 clap = { version = "4.4", features = ["derive"] }
-
-# 日志
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# 错误处理
 thiserror = "1.0"
-anyhow = "1.0"
-
-# 工具
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.6", features = ["v4", "serde"] }
 ```
 
-### 6.3 错误处理设计
+---
 
-```rust
-use thiserror::Error;
+## 八、Rust 核心函数索引
 
-#[derive(Error, Debug)]
-pub enum CraftError {
-    #[error("Parse error: {0}")]
-    Parse(#[from] ParseError),
+| 模块 | 函数/结构 | 功能 |
+|------|----------|------|
+| **craft-core** | `ApiSpec::new()` | 创建 API 规格 |
+| | `MappingRule::new()` | 创建映射规则 |
+| | `MappingType` | 映射类型枚举 |
+| **craft-analyzer** | `SemanticAnalyzer::analyze()` | 分析并生成映射 |
+| | `calculate_similarity()` | 计算 API 相似度 |
+| | `find_best_mapping()` | 查找最佳匹配 |
+| | `generate_method_mappings()` | 生成方法映射 |
+| | `determine_mapping_type()` | 确定映射类型 |
+| **craft-generator** | `LifecycleMapping::activity_to_uiability()` | 生命周期映射 |
+| | `LifecycleMapping::get_target()` | 获取目标方法 |
+| | `AdapterGenerator::generate()` | 生成适配器代码 |
+| | `generate_java()` | 生成 Java 适配器 |
+| | `generate_kotlin()` | 生成 Kotlin 适配器 |
+| | `generate_arkts()` | 生成 ArkTS 适配器 |
+| | `java_to_ts_type()` | Java→TypeScript 类型转换 |
+| | `java_to_kotlin_type()` | Java→Kotlin 类型转换 |
+| | `generate_type_conversion()` | 生成类型转换代码 |
 
-    #[error("Mapping error: {0}")]
-    Mapping(#[from] MappingError),
+---
 
-    #[error("Generation error: {0}")]
-    Generation(#[from] GeneratorError),
+## 九、测试验证
 
-    #[error("AI error: {0}")]
-    Ai(#[from] AiError),
+### 9.1 单元测试
 
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
-}
+```bash
+# 运行所有测试
+cargo test --all
 
-#[derive(Error, Debug)]
-pub enum ParseError {
-    #[error("Failed to parse file: {path}")]
-    FileParseFailed { path: PathBuf },
-
-    #[error("Invalid syntax at line {line}, column {column}")]
-    InvalidSyntax { line: usize, column: usize },
-
-    #[error("Unsupported language: {0}")]
-    UnsupportedLanguage(String),
-}
-
-// 使用 Result 类型别名简化
-pub type Result<T> = std::result::Result<T, CraftError>;
+# 运行特定 crate 测试
+cargo test -p craft-generator
 ```
 
----
+### 9.2 集成测试
 
-## 七、实施路线图
-
-### Phase 1: 基础设施 (Foundation)
-- [ ] 搭建 Cargo workspace
-- [ ] 实现 craft-core 核心数据结构
-- [ ] 集成 tree-sitter 解析器
-- [ ] 建立基础 CLI 框架
-
-### Phase 2: 解析与分析 (Parser & Analyzer)
-- [ ] 实现 Java/Kotlin 解析器
-- [ ] 实现 ArkTS 解析器
-- [ ] 建立 API 规格数据库
-- [ ] 实现基础语义分析
-
-### Phase 3: AI 集成 (AI Integration)
-- [ ] 集成 Claude API
-- [ ] 实现提示词模板系统
-- [ ] 建立速率限制和重试机制
-- [ ] 实现 AI 辅助映射
-
-### Phase 4: 代码生成 (Code Generation)
-- [ ] 实现 Tera 模板系统
-- [ ] 实现适配器生成器
-- [ ] 实现测试生成器
-- [ ] 建立质量验证流程
-
-### Phase 5: 流水线 (Pipeline)
-- [ ] 实现批量处理器
-- [ ] 实现增量更新
-- [ ] 建立 CI/CD 流程
-- [ ] 性能优化和基准测试
-
----
-
-## 八、性能目标
-
-| 指标 | 目标 | 测量方式 |
-|------|------|---------|
-| 解析速度 | > 10,000 files/sec | 单线程解析吞吐量 |
-| 批量映射 | > 1,000 APIs/sec | 含 AI 调用的端到端 |
-| 内存使用 | < 500MB | 处理 30,000 API 时 |
-| 生成代码性能 | < 5% overhead | vs 手写适配器 |
-| 编译时间 | < 30s (release) | 完整项目编译 |
-
----
-
-## 九、安全性保证
-
-```rust
-// Rust 编译时保证
-// ✅ 内存安全 - 所有权系统
-// ✅ 线程安全 - Send/Sync traits
-// ✅ 空指针安全 - Option 类型
-// ✅ 错误处理 - Result 类型
-
-// 示例: 并发安全的缓存
-use std::sync::Arc;
-use tokio::sync::RwLock;
-
-pub struct SafeCache<K, V> {
-    inner: Arc<RwLock<HashMap<K, V>>>,
-}
-
-impl<K: Eq + Hash, V: Clone> SafeCache<K, V> {
-    pub async fn get(&self, key: &K) -> Option<V> {
-        self.inner.read().await.get(key).cloned()
-    }
-
-    pub async fn insert(&self, key: K, value: V) {
-        self.inner.write().await.insert(key, value);
-    }
-}
-// 编译器保证: 无数据竞争，无死锁风险
+```bash
+# Hello World 示例验证
+cd examples/counter-app
+python3 craft_generate.py
+python3 verify_code.py
 ```
 
+### 9.3 测试覆盖
+
+| 测试类型 | 覆盖范围 |
+|----------|----------|
+| 生命周期映射 | `test_lifecycle_mapping()` |
+| 适配器生成 | `test_generate_java_adapter()` |
+| 类型转换 | `test_java_to_ts_type_conversion()` |
+| 相似度计算 | `test_string_similarity()` |
+
 ---
 
-*文档版本: 2.0.0*
-*技术栈: Rust*
-*最后更新: 2026-01-20*
+*文档版本: 2.1.0*
+*技术栈: Rust + Python*
+*最后更新: 2026-01-21*
 *作者: CRAFT Team (AI-assisted)*
